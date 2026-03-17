@@ -146,8 +146,6 @@ tamper_indicators = {
 
 
 
-
-
 def detect_ela(image, quality=90):
 
     # Save temporary JPEG
