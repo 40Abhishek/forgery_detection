@@ -82,7 +82,7 @@ illumination_regions
 
 
 #Suspicious Region Fusion
-
+'''
 all_regions = (
     ela_regions +
     noise_regions +
@@ -94,7 +94,7 @@ all_regions = (
 merged_regions = merge_overlapping_boxes(all_regions)
 
 
-
+'''
 #Tamper Indicator Vector
 
 tamper_indicators = {
