@@ -37,8 +37,8 @@ DATASET_PATH  = "casia_dataset"   # folder containing Au/ and Tp/ subfolders
 MODEL_SAVE    = "stage3_model.keras"
 IMAGE_SIZE    = (224, 224)        # MobileNetV2 expects 224×224
 BATCH_SIZE    = 32
-EPOCHS        = 10
-LEARNING_RATE = 0.0001
+EPOCHS        = 25
+LEARNING_RATE = 0.001   # higher than transfer learning — scratch needs bigger steps
 
 
 # ─────────────────────────────────────────────────────────
@@ -164,15 +164,17 @@ def build_model():
         Dense 1, Sigmoid      — output: 0.0 = genuine, 1.0 = forged
     """
 
-    # Load MobileNetV2 without its top classification layer
+    # Load MobileNetV2 with random weights — training from scratch
+    # No pretrained knowledge, the model learns everything from CASIA
     base_model = MobileNetV2(
         input_shape = IMAGE_SIZE + (3,),
-        include_top = False,             # remove ImageNet classifier
-        weights     = "imagenet"         # keep pretrained weights
+        include_top = False,        # remove the classification head
+        weights     = None          # random init — true scratch training
     )
 
-    # Freeze all base layers — we don't want to overwrite what it already knows
-    base_model.trainable = False
+    # Unfreeze all layers — with random weights, freezing would mean
+    # the base learns nothing and the whole model stays random
+    base_model.trainable = True
 
     # Build our classifier on top
     model = models.Sequential([
@@ -191,7 +193,7 @@ def build_model():
     )
 
     print("\n  Model built successfully.")
-    print(f"  Base model layers : {len(base_model.layers)} (frozen)")
+    print(f"  Base model layers : {len(base_model.layers)} (all trainable — scratch)")
     print(f"  Total parameters  : {model.count_params():,}")
 
     return model
