@@ -2,67 +2,137 @@
 =============================================================
   DOCUMENT FORGERY DETECTION SYSTEM
   Stage 3 : CNN Tamper Detection — INFERENCE
-  Library : TensorFlow / Keras
+  Library : PyTorch
   Input   : PNG image (guaranteed by Stage 1)
   Output  : cnn_score (0-100) → goes to Stage 9 Risk Engine
 =============================================================
-  This script loads the trained model (stage3_model.keras)
-  and runs it on one document image to get a tamper score.
+  Loads the trained model weights from stage3_model.pth
+  and runs it on one document image.
 
-  Run stage3_train.py first to generate stage3_model.keras.
-  After that, this script is what the pipeline calls every
-  time a new document needs to be checked.
+  Run stage3_train.py first to generate stage3_model.pth.
 =============================================================
 """
 
-import cv2
+import torch
+import torch.nn as nn
 import numpy as np
-import tensorflow as tf
+import cv2
+from torchvision import transforms
 
 
 # ─────────────────────────────────────────────────────────
-#  SETTINGS
+#  SETTINGS — must match stage3_train.py exactly
 # ─────────────────────────────────────────────────────────
 
-MODEL_PATH = "stage3_model.keras"   # saved by stage3_train.py
-IMAGE_SIZE = (224, 224)             # must match training size
+MODEL_PATH = "stage3_model.pth"
+IMAGE_SIZE = 128
+DEVICE     = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 # ─────────────────────────────────────────────────────────
-#  LOAD MODEL ONCE
-#  Loading is expensive so we do it at module level.
-#  When pipeline imports this file, model loads once and
-#  stays in memory for all subsequent calls.
+#  CNN ARCHITECTURE
+#  Must be defined identically to stage3_train.py
+#  PyTorch saves only the weights, not the architecture —
+#  so we must rebuild the same structure to load into.
+# ─────────────────────────────────────────────────────────
+
+class ForgeryDetectorCNN(nn.Module):
+
+    def __init__(self):
+        super(ForgeryDetectorCNN, self).__init__()
+
+        self.conv_block1 = nn.Sequential(
+            nn.Conv2d(3, 32, kernel_size=3, padding=1),
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.MaxPool2d(2)
+        )
+        self.conv_block2 = nn.Sequential(
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.MaxPool2d(2)
+        )
+        self.conv_block3 = nn.Sequential(
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
+            nn.MaxPool2d(2)
+        )
+        self.conv_block4 = nn.Sequential(
+            nn.Conv2d(128, 256, kernel_size=3, padding=1),
+            nn.BatchNorm2d(256),
+            nn.ReLU(),
+            nn.MaxPool2d(2)
+        )
+        self.fc = nn.Sequential(
+            nn.Linear(256 * 8 * 8, 512),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(512, 1),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        x = self.conv_block1(x)
+        x = self.conv_block2(x)
+        x = self.conv_block3(x)
+        x = self.conv_block4(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
+        return x
+
+
+# ─────────────────────────────────────────────────────────
+#  LOAD MODEL ONCE AT IMPORT
+#  Expensive operation — done once when pipeline starts,
+#  not on every document check.
 # ─────────────────────────────────────────────────────────
 
 print("[Stage 3] Loading CNN model...")
 try:
-    model = tf.keras.models.load_model(MODEL_PATH)
+    model = ForgeryDetectorCNN().to(DEVICE)
+    model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
+    model.eval()   # set to evaluation mode — disables dropout
     print(f"[Stage 3] Model loaded from {MODEL_PATH}")
-except Exception as e:
+except FileNotFoundError:
     raise FileNotFoundError(
-        f"Could not load model: {MODEL_PATH}\n"
-        f"Run stage3_train.py first to generate the model.\n"
-        f"Error: {e}"
+        f"Model file not found: {MODEL_PATH}\n"
+        f"Run stage3_train.py first to generate the model."
     )
+
+
+# ─────────────────────────────────────────────────────────
+#  INFERENCE TRANSFORM
+#  Same as validation transform in training —
+#  no augmentation, just resize and normalize.
+# ─────────────────────────────────────────────────────────
+
+inference_transform = transforms.Compose([
+    transforms.ToPILImage(),
+    transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.5, 0.5, 0.5],
+                         std= [0.5, 0.5, 0.5])
+])
 
 
 # ─────────────────────────────────────────────────────────
 #  INFERENCE
 # ─────────────────────────────────────────────────────────
 
-def run_cnn_inference(image_path):
+def run_cnn_detection(image_path):
     """
     What it does:
-        Loads the document image, resizes it to 224×224,
-        preprocesses it the same way training data was processed,
-        then passes it through the trained MobileNetV2 model.
+        Loads the document PNG, applies the same preprocessing
+        used during training, passes it through the trained CNN,
+        and returns a forgery probability score.
 
-        The model outputs a single value between 0.0 and 1.0:
+        Model output is a single sigmoid value:
             0.0 = model is confident this is GENUINE
             1.0 = model is confident this is FORGED
 
-        We scale this to 0-100 to match other stage scores.
+        We scale to 0-100 to match all other stage scores.
 
     Args:
         image_path : path to normalized PNG from Stage 1
@@ -76,27 +146,35 @@ def run_cnn_inference(image_path):
         }
     """
 
-    # Load and resize image
+    print(f"\n[Stage 3] CNN Tamper Detection")
+    print(f"  Input : {image_path}")
+    print("-" * 50)
+
+    # Load image with OpenCV — already PNG from Stage 1
     image = cv2.imread(image_path)
     if image is None:
         raise ValueError(f"Could not load image: {image_path}")
 
-    # Convert BGR (OpenCV) to RGB (what the model expects)
+    # Convert BGR → RGB (OpenCV loads BGR, PyTorch expects RGB)
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    image_resized = cv2.resize(image_rgb, IMAGE_SIZE)
 
-    # Preprocess exactly as during training — scale pixels to [-1, +1]
-    image_array = tf.keras.applications.mobilenet_v2.preprocess_input(
-        np.array(image_resized, dtype=np.float32)
-    )
+    # Apply transforms: resize → tensor → normalize
+    tensor = inference_transform(image_rgb)
 
-    # Add batch dimension: (224, 224, 3) → (1, 224, 224, 3)
-    image_batch = np.expand_dims(image_array, axis=0)
+    # Add batch dimension: (3, 128, 128) → (1, 3, 128, 128)
+    tensor = tensor.unsqueeze(0).to(DEVICE)
 
-    # Run through model
-    prediction = model.predict(image_batch, verbose=0)
-    raw_score  = float(prediction[0][0])   # single sigmoid output
-    cnn_score  = round(raw_score * 100, 2) # scale to 0-100
+    # Run through model — no gradient needed for inference
+    with torch.no_grad():
+        output    = model(tensor)
+        raw_score = float(output.item())
+
+    cnn_score = round(raw_score * 100, 2)
+
+    flag = "⚠  SUSPICIOUS" if cnn_score >= 50.0 else "✓  OK"
+    print(f"  [{flag}]  CNN confidence of forgery = {cnn_score:.2f}%")
+    print("-" * 50)
+    print(f"  CNN Score : {cnn_score} / 100")
 
     return {
         "raw_score" : round(raw_score, 4),
@@ -104,35 +182,6 @@ def run_cnn_inference(image_path):
         "suspicious": cnn_score >= 50.0,
         "detail"    : f"CNN confidence of forgery = {cnn_score:.2f}%"
     }
-
-
-# ─────────────────────────────────────────────────────────
-#  MAIN ENTRY POINT
-# ─────────────────────────────────────────────────────────
-
-def run_cnn_detection(image_path):
-    """
-    Call this from your pipeline after Stage 2.
-
-    Args:
-        image_path : path to normalized PNG from Stage 1
-
-    Returns:
-        cnn result dict with cnn_score → feeds Stage 9
-    """
-
-    print(f"\n[Stage 3] CNN Tamper Detection")
-    print(f"  Input : {image_path}")
-    print("-" * 50)
-
-    result = run_cnn_inference(image_path)
-
-    flag = "⚠  SUSPICIOUS" if result["suspicious"] else "✓  OK"
-    print(f"  [{flag}]  {result['detail']}")
-    print("-" * 50)
-    print(f"  CNN Score : {result['cnn_score']} / 100")
-
-    return result
 
 
 # ─────────────────────────────────────────────────────────
