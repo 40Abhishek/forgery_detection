@@ -18,24 +18,14 @@
 import cv2
 import numpy as np
 
-
-# ─────────────────────────────────────────────────────────
 #  THRESHOLDS
-#  These are the decision boundaries for each detector.
-#  If a score crosses its threshold → that detector flags suspicious.
-#  You can tune these values after testing on real documents.
-# ─────────────────────────────────────────────────────────
-
 ELA_THRESHOLD        = 15.0   # mean ELA brightness (0-255 scale)
 NOISE_THRESHOLD      = 8.0    # std-dev of per-tile noise levels
 CLONE_BLOCK_SIZE     = 16     # size of each block in pixels (16×16)
 CLONE_SIM_THRESHOLD  = 0.995  # cosine similarity to call two blocks identical
 
 
-# ─────────────────────────────────────────────────────────
 #  DETECTOR 1 : ELA  (Error Level Analysis)
-# ─────────────────────────────────────────────────────────
-
 def run_ela(image_path):
     """
     What it does:
@@ -76,14 +66,11 @@ def run_ela(image_path):
         "ela_score" : round(ela_score, 2),
         "ela_map"   : ela_map,
         "suspicious": ela_score > ELA_THRESHOLD,
-        "detail"    : f"ELA mean brightness = {ela_score:.2f}  (limit {ELA_THRESHOLD})"
+        "detail"    : f"ELA mean brightness = {ela_score:.3f}  (limit {ELA_THRESHOLD})"
     }
 
 
-# ─────────────────────────────────────────────────────────
 #  DETECTOR 2 : NOISE INCONSISTENCY
-# ─────────────────────────────────────────────────────────
-
 def run_noise_analysis(image):
     """
     What it does:
@@ -131,10 +118,7 @@ def run_noise_analysis(image):
     }
 
 
-# ─────────────────────────────────────────────────────────
 #  DETECTOR 3 : COPY-MOVE DETECTION
-# ─────────────────────────────────────────────────────────
-
 def run_copy_move(image):
     """
     What it does:
@@ -198,10 +182,7 @@ def run_copy_move(image):
     }
 
 
-# ─────────────────────────────────────────────────────────
 #  DETECTOR 4 : COMBINED TAMPER HEATMAP
-# ─────────────────────────────────────────────────────────
-
 def build_heatmap(image, ela_map, noise_map, clone_pairs):
     """
     What it does:
@@ -248,10 +229,7 @@ def build_heatmap(image, ela_map, noise_map, clone_pairs):
     return heatmap
 
 
-# ─────────────────────────────────────────────────────────
 #  SCORING ENGINE
-# ─────────────────────────────────────────────────────────
-
 def compute_forensics_score(ela, noise, copy_move):
     """
     Combines all 3 detector scores into one final 0-100 score.
@@ -279,14 +257,9 @@ def compute_forensics_score(ela, noise, copy_move):
     return round(score, 2)
 
 
-# ─────────────────────────────────────────────────────────
 #  MAIN ENTRY POINT
-# ─────────────────────────────────────────────────────────
-
 def run_image_forensics(image_path, save_heatmap_path="stage2_heatmap.png"):
     """
-    Call this from your pipeline after Stage 1.
-
     Args:
         image_path       : path to the normalized PNG from Stage 1
         save_heatmap_path: where to save the heatmap PNG for the report
@@ -332,6 +305,7 @@ def run_image_forensics(image_path, save_heatmap_path="stage2_heatmap.png"):
     print(f"  Forensics Score : {forensics_score} / 100")
     print(f"  Verdict         : {'SUSPICIOUS' if overall_suspicious else 'LIKELY GENUINE'}")
     print(f"  Heatmap saved   : {save_heatmap_path}")
+    print("Overall : ", overall_suspicious)
 
     return {
         "ela"               : ela,
@@ -343,13 +317,8 @@ def run_image_forensics(image_path, save_heatmap_path="stage2_heatmap.png"):
     }
 
 
-# ─────────────────────────────────────────────────────────
-#  QUICK TEST
-# ─────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    import sys
-    path   = sys.argv[1] if len(sys.argv) > 1 else "test_document.png"
-    result = run_image_forensics(path)
-    print(f"\n  → Forensics score for Risk Engine : {result['forensics_score']}")
-    print(f"  → Heatmap for Report              : {result['heatmap_path']}")
+    
+    path   = "local datastore\main.png"
+    result = run_image_forensics(path, "local datastore")

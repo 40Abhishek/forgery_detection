@@ -388,8 +388,8 @@ def run_ocr_extraction(image_path):
 # ─────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    import sys
-    path   = sys.argv[1] if len(sys.argv) > 1 else "test_document.png"
+    path   = "C:\\Users\\2077a\\OneDrive\\Desktop\\MCA 2024-2026\\SEM 4\\Major\\forgery_detection\\stage_1 Input Normalization\\mig.pdf"
+
     result = run_ocr_extraction(path)
     print(f"\n  → OCR score for Risk Engine : {result['ocr_score']}")
     print(f"  → Extracted text            : {result['ocr']['full_text'][:200]}...")
