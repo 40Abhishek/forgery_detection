@@ -5,11 +5,11 @@ import cv2
 from torchvision import transforms
 
 # ✅ FIXED: match actual saved model name
-MODEL_PATH = "stage3_model.pth"
+MODEL_PATH = "model.pth"
 
 IMAGE_SIZE = 128
 DEVICE     = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+path = "local datastore/main.png"
 
 # ─────────────────────────────────────────────────────────
 # ✅ FIXED: EXACT SAME ARCHITECTURE AS TRAINING
@@ -121,7 +121,5 @@ def run_cnn_detection(image_path):
 # ─────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    import sys
-    path   = sys.argv[1] if len(sys.argv) > 1 else "test_document.png"
     result = run_cnn_detection(path)
     print(f"\n  → CNN score for Risk Engine : {result['cnn_score']}")

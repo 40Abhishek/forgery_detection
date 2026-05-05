@@ -2,8 +2,11 @@ import os
 import cv2
 from pypdf import PdfReader
 
-path   = "C:\\Users\\2077a\\OneDrive\\Desktop\\MCA 2024-2026\\SEM 4\\Major\\forgery_detection\\stage_1 Input Normalization\\admit.pdf"
+path   = ""
+SUPPORTED_EXTENSIONS = ["jpg", "jpeg", "png", "pdf"]
 
+# All working files go here — original is preserved
+working_directory = "local datastore"
 
 def detect_pdf_type(pdf_path):
     #We read the first page and try to extract text.
@@ -37,9 +40,6 @@ def handle_image(file_path):
     cv2.imwrite(output_path, image)
     return output_path
 
-
-import os
-from pypdf import PdfReader
 
 def handle_image_based_pdf(file_path):
     try:
@@ -130,6 +130,7 @@ def run_input_normalization(file_path):
     if input_extension in ["jpg", "jpeg", "png"]:
         output_path = handle_image(file_path)
         file_type   = "image"
+        next_stage = 2
 
     #CASE 2: PDF file 
     elif input_extension == "pdf":
@@ -137,10 +138,12 @@ def run_input_normalization(file_path):
 
         if pdf_type == "image_based":
             output_path = handle_image_based_pdf(file_path)
+            next_stage = 2
             file_type   = "image_based_pdf"
         else:
             output_path = handle_vector_pdf(file_path)
             file_type   = "vector_pdf"
+            next_stage = 4
         
 
     else:
@@ -148,18 +151,17 @@ def run_input_normalization(file_path):
     
     
     return {
+        "input_path" :  file_path,
+        "output_path": output_path,
+        "next_stage" : next_stage,
         "file_type"  : file_type,
         "status"     : "ok"
     }
 
 
 if __name__ == "__main__":
-    SUPPORTED_EXTENSIONS = ["jpg", "jpeg", "png", "pdf"]
-
-    # All working files go here — original is preserved
-    working_directory = "local datastore"
-    # image_name=
-
+    
+    # image_name =
     
     result = run_input_normalization(path)
 

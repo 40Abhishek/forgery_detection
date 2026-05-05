@@ -1,61 +1,29 @@
 """
-=============================================================
-  DOCUMENT FORGERY DETECTION SYSTEM
-  Stage 4 : OCR Extraction + Text Validation
-  Libraries: easyocr, pyspellchecker, re (built-in)
-  Input   : PNG image (guaranteed by Stage 1)
-  Output  : ocr_score (0-100) → goes to Risk Scoring Engine
-            extracted text + all validation findings
-=============================================================
   Checks:
-    1. OCR Extraction       – reads all text from the document
-    2. Spelling Validation  – flags misspelled words
-    3. Date Validation      – flags invalid dates (e.g. 31 Feb)
-    4. Numeric Field Checks – Aadhaar, PAN, PIN, phone formats
-=============================================================
+    1. OCR Extraction       : reads all text from the document
+    2. Spelling Validation  : flags misspelled words
+    3. Date Validation      : flags invalid dates (e.g. 31 Feb)
+    4. Numeric Field Checks : Aadhaar, PAN, PIN, phone formats
 """
 
 import re
 import easyocr
 from spellchecker import SpellChecker
 
-path   = "C:\\Users\\2077a\\OneDrive\\Desktop\\MCA 2024-2026\\SEM 4\\Major\\forgery_detection\\stage_1 Input Normalization\\mig.pdf"
+path   = "local datastore\\main.pdf"
 
 
-# ─────────────────────────────────────────────────────────
-#  SETUP
 #  EasyOCR reader is expensive to initialize (loads the model)
-#  so we create it once here at module level, not inside a function.
-#  This means it loads once when you import this file — not on
-#  every document check.
-#
-#  Languages: English + Hindi — covers most Indian documents
-#  gpu=False  — safe default, works on all machines
-#             — change to gpu=True if you have a CUDA GPU
-# ─────────────────────────────────────────────────────────
+#  it loads once when you import this file — not on every document check.
+#  Languages: English + Hindi
 
-print("[Stage 4] Loading EasyOCR model (first run may take a moment)...")
+print("[Stage 4] Loading EasyOCR model")
 reader = easyocr.Reader(["en", "hi"], gpu=False)
 spell  = SpellChecker()
 
 
-# ─────────────────────────────────────────────────────────
-#  CHECK 1 : OCR EXTRACTION
-# ─────────────────────────────────────────────────────────
-
 def extract_text(image_path):
     """
-    What it does:
-        Runs EasyOCR on the document image and extracts all readable text.
-
-        EasyOCR returns a list of detections, each containing:
-          - bounding box coordinates (where on the image the text is)
-          - the text string
-          - confidence score (0.0 to 1.0 — how sure EasyOCR is)
-
-        We keep only detections with confidence >= 0.5 to filter out
-        noise and unclear regions.
-
     Returns:
         full_text   : all extracted text joined as one string
         detections  : list of (text, confidence) for each detected region
@@ -83,22 +51,8 @@ def extract_text(image_path):
     }
 
 
-# ─────────────────────────────────────────────────────────
-#  CHECK 2 : SPELLING VALIDATION
-# ─────────────────────────────────────────────────────────
-
 def check_spelling(word_list):
     """
-    What it does:
-        Checks every extracted word against an English dictionary.
-        Flags words that are not recognized.
-
-        Why this matters for forgery:
-          A genuine printed document (certificate, ID) is professionally
-          typeset — spelling errors are extremely rare.
-          A forged document made hastily in an image editor often has
-          typos, wrong words, or garbled text from bad copy-pasting.
-
         We skip:
           - Numbers (roll numbers, dates, IDs)
           - Words shorter than 3 characters (too, an, of etc.)
@@ -138,16 +92,10 @@ def check_spelling(word_list):
         "detail"     : f"{len(misspelled)} misspelled word(s) out of {len(checkable)} checked"
     }
 
-
-# ─────────────────────────────────────────────────────────
-#  CHECK 3 : DATE VALIDATION
-# ─────────────────────────────────────────────────────────
-
 # Days in each month — index 0 unused, 1=Jan ... 12=Dec
 DAYS_IN_MONTH = [0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
 def is_valid_date(day, month, year):
-    """Returns True if the date is logically valid."""
     if month < 1 or month > 12:
         return False
     if day < 1 or day > DAYS_IN_MONTH[month]:
@@ -158,19 +106,10 @@ def is_valid_date(day, month, year):
 
 def check_dates(full_text):
     """
-    What it does:
-        Finds all date-like patterns in the extracted text using regex.
-        Validates each one logically — month must be 1-12, day must
-        be valid for that month, year must be reasonable.
-
-        Patterns detected:
+     Patterns detected:
           DD/MM/YYYY   DD-MM-YYYY   DD.MM.YYYY
           YYYY/MM/DD   YYYY-MM-DD
           DD Month YYYY  (e.g. 15 March 2022)
-
-        Why this matters for forgery:
-          Someone editing a date carelessly may produce impossible dates
-          like 31/02/2023 (Feb has no 31st) or 00/13/2021.
 
     Returns:
         dates_found  : list of all date strings detected
@@ -230,17 +169,9 @@ def check_dates(full_text):
     }
 
 
-# ─────────────────────────────────────────────────────────
-#  CHECK 4 : NUMERIC FIELD CHECKS
-# ─────────────────────────────────────────────────────────
-
 def check_numeric_fields(full_text):
     """
-    What it does:
-        Looks for known Indian document number formats using regex.
-        Validates that they match the correct pattern.
-
-        Fields checked:
+      Fields checked:
           Aadhaar  : 12 digits, usually in groups of 4  (XXXX XXXX XXXX)
           PAN      : 5 letters + 4 digits + 1 letter    (ABCDE1234F)
           PIN code : 6 digits starting with 1-9         (110001)
@@ -295,16 +226,8 @@ def check_numeric_fields(full_text):
         "detail"    : f"{sum(len(v) for v in fields.values())} numeric field(s) found, {len(flags)} invalid"
     }
 
-
-# ─────────────────────────────────────────────────────────
-#  OCR SCORE  (0 - 100)
-# ─────────────────────────────────────────────────────────
-
 def compute_ocr_score(spelling, dates, numeric):
     """
-    Combines all text validation findings into one 0-100 score.
-    Higher = more suspicious.
-
     Weights:
         Spelling errors   → 40 pts  (strong forgery signal)
         Invalid dates     → 35 pts  (hard to fake correctly)
@@ -325,17 +248,8 @@ def compute_ocr_score(spelling, dates, numeric):
     return round(score, 2)
 
 
-# ─────────────────────────────────────────────────────────
-#  MAIN ENTRY POINT
-# ─────────────────────────────────────────────────────────
-
 def run_ocr_extraction(image_path):
     """
-    Call this from your pipeline after Stage 3.
-
-    Args:
-        image_path : path to the normalized PNG from Stage 1
-
     Returns:
         {
             "ocr"       : { full_text, detections, word_list, word_count }
@@ -384,10 +298,6 @@ def run_ocr_extraction(image_path):
         "overall_suspicious": overall_suspicious
     }
 
-
-# ─────────────────────────────────────────────────────────
-#  QUICK TEST
-# ─────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     

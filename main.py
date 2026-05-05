@@ -23,28 +23,29 @@ import os
 
 # ── Folder names — CHANGE THESE if you rename your stage folders ──────────────
 
-STAGE1_FOLDER = "stage1"   # Input Normalization
-STAGE2_FOLDER = "stage2"   # Image Forensics
-STAGE3_FOLDER = "stage3"   # CNN Tamper Detection
-STAGE4_FOLDER = "stage4"   # PDF Forensics
-STAGE5_FOLDER = "stage5"   # OCR Extraction
-STAGE6_FOLDER = "stage6"   # Risk Scoring Engine
+# STAGE1_FOLDER = "stage1_Normalization"   # Input Normalization
+# STAGE2_FOLDER = "stage2_Image_forensics"   # Image Forensics
+# STAGE3_FOLDER = "stage3_CNN"   # CNN Tamper Detection
+# STAGE4_FOLDER = "stage4_PDF_forensics"   # PDF Forensics
+# STAGE5_FOLDER = "stage5_OCR"   # OCR Extraction
+# STAGE6_FOLDER = "stage6_Risk_scoring"   # Risk Scoring Engine
 
 
-# ── Add all stage folders to Python path so imports work ──────────────────────
+# # ── Add all stage folders to Python path so imports work ──────────────────────
 
-for folder in [stage1_Normalization, stage2_image_forensics, stage3_CNN, 
-                stage4_PDF_forensics,stage5_OCR, stage6_Risk_scoring    ]:
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), folder))
+# for folder in [STAGE1_FOLDER, STAGE2_FOLDER, STAGE3_FOLDER,
+#                STAGE4_FOLDER, STAGE5_FOLDER, STAGE6_FOLDER]:
+#     sys.path.insert(0, os.path.join(os.path.dirname(__file__), folder))
+
 
 # ── Import all stages ──────────────────────────────────────────────────────────
 
-from stage1_Normalization  import run_input_normalization
-from stage2_image_forensics import run_image_forensics
-from stage3_CNN       import run_cnn_detection
-from stage8_pdf_forensics   import run_pdf_forensics   # file is still named stage8
-from stage4_ocr             import run_ocr_extraction
-from stage9_risk_scoring    import run_risk_scoring
+from stage1_Normalization.stage1    import run_input_normalization
+from stage2_Image_forensics.stage2  import run_image_forensics
+from stage3_CNN.stage3_inference    import run_cnn_detection
+from stage4_PDF_forensics.stage4    import run_pdf_forensics   # file is still named stage8
+from stage5_OCR.stage5              import run_ocr_extraction
+from stage6_Risk_scoring.stage6     import run_risk_scoring
 
 
 # ── Helper : print final report to terminal ───────────────────────────────────
@@ -143,27 +144,15 @@ def print_final_report(file_info, all_results, risk_result):
     return risk_result
 
 
-# ── Main Pipeline ──────────────────────────────────────────────────────────────
-
 def run_pipeline(input_path):
-    """
-    Runs the full tamper detection pipeline on one document.
-
-    Args:
-        input_path : path to the document file (JPG, PNG, or PDF)
-
-    Returns:
-        dict with all stage results + final risk score + verdict
-    """
+    #Returns: dict with all stage results + final risk score + verdict
 
     all_results = {}
 
-    print("\n" + "=" * 60)
-    print("  DOCUMENT TAMPER DETECTION SYSTEM")
+    print("-->>DOCUMENT TAMPER DETECTION SYSTEM")
     print(f"  Input: {input_path}")
-    print("=" * 60)
 
-    # ── STAGE 1 : Input Normalization ─────────────────────────────────────────
+    #STAGE 1 : Input Normalization
     stage1 = run_input_normalization(input_path)
 
     if stage1["status"] == "error":
@@ -174,9 +163,7 @@ def run_pipeline(input_path):
     output_path = stage1["output_path"]
     next_stage  = stage1["next_stage"]
 
-    # ── IMAGE PIPELINE (JPG / PNG / image-based PDF) ──────────────────────────
     if next_stage == 2:
-
         # STAGE 2 : Image Forensics
         stage2 = run_image_forensics(output_path)
         all_results["stage2"] = stage2
@@ -196,7 +183,6 @@ def run_pipeline(input_path):
             "ocr_score"      : stage5["ocr_score"]
         })
 
-    # ── PDF PIPELINE (vector PDF) ─────────────────────────────────────────────
     elif next_stage == 8:
 
         # STAGE 4 : PDF Forensics
@@ -227,19 +213,16 @@ def run_pipeline(input_path):
     }
 
 
-# ── Entry Point ────────────────────────────────────────────────────────────────
-
 if __name__ == "__main__":
 
-    if len(sys.argv) < 2:
-        print("Usage: python main.py path/to/document")
-        print("Example: python main.py documents/aadhaar.png")
-        sys.exit(1)
-
-    input_path = sys.argv[1]
-    result     = run_pipeline(input_path)
+    input_path = "local datastore\\main.jpg"
+    # try:
+    result = run_pipeline(input_path)
 
     if result:
         print(f"\nPipeline complete.")
         print(f"Verdict    : {result['verdict']}")
         print(f"Risk Score : {result['score']} / 100")
+
+    # except Exception as e:
+    #     print(f"Exception: {e}")

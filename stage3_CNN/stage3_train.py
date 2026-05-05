@@ -1,12 +1,3 @@
-"""
-Stage 3 : CNN Forgery Detector — Training
-Run on Google Colab (CPU or GPU)
-
-Dataset:
-    CASIA2/Au/   real images     → label 0
-    CASIA2/Tp/   tampered images → label 1
-"""
-
 import os
 import random
 import torch
@@ -19,54 +10,19 @@ from PIL import Image
 
 # ── Settings ──────────────────────────────────────────────
 
-AU_FOLDER  = "CASIA2/Au"
-TP_FOLDER  = "CASIA2/Tp"
-MODEL_PATH = "stage3_model.pth"
+AU_FOLDER  = "/kaggle/input/casia-20-image-tampering-detection-dataset/CASIA2/Au"
+TP_FOLDER  = "/kaggle/input/casia-20-image-tampering-detection-dataset/CASIA2/Tp"
+MODEL_PATH = "/content/stage3_model.pth"
 IMAGE_SIZE = 128
 BATCH_SIZE = 32
-EPOCHS     = 25
+EPOCHS     = 75
 LR         = 0.001
 VAL_SPLIT  = 0.20
 DEVICE     = "cuda" if torch.cuda.is_available() else "cpu"
 EXTENSIONS = {".jpg", ".jpeg", ".png", ".tif", ".tiff"}
 
 
-# ── Load Data ─────────────────────────────────────────────
-
-genuine  = [(os.path.join(AU_FOLDER, f), 0) for f in os.listdir(AU_FOLDER)
-            if os.path.splitext(f)[1].lower() in EXTENSIONS]
-tampered = [(os.path.join(TP_FOLDER, f), 1) for f in os.listdir(TP_FOLDER)
-            if os.path.splitext(f)[1].lower() in EXTENSIONS]
-all_data = genuine + tampered
-
-print(f"Genuine: {len(genuine)}  Tampered: {len(tampered)}  Total: {len(all_data)}")
-
-random.shuffle(all_data)
-split      = int(len(all_data) * (1 - VAL_SPLIT))
-train_data = all_data[:split]
-val_data   = all_data[split:]
-
-print(f"Train: {len(train_data)}  Val: {len(val_data)}")
-
-
-# ── Transforms ────────────────────────────────────────────
-
-train_transform = transforms.Compose([
-    transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
-    transforms.RandomHorizontalFlip(),
-    transforms.RandomRotation(5, fill=255),
-    transforms.ToTensor(),
-    transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
-])
-
-val_transform = transforms.Compose([
-    transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
-    transforms.ToTensor(),
-    transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
-])
-
-
-# ── Dataset ───────────────────────────────────────────────
+# ── Dataset Class ─────────────────────────────────────────
 
 class ForgeryDataset(Dataset):
 
@@ -83,99 +39,144 @@ class ForgeryDataset(Dataset):
         return self.transform(image), torch.tensor([label], dtype=torch.float32)
 
 
-train_loader = DataLoader(ForgeryDataset(train_data, train_transform),
-                          batch_size=BATCH_SIZE, shuffle=True)
-val_loader   = DataLoader(ForgeryDataset(val_data, val_transform),
-                          batch_size=BATCH_SIZE, shuffle=False)
+# ── Functions ─────────────────────────────────────────────
+
+def load_and_split():
+    """Loads image paths, shuffles, splits 80/20."""
+    genuine  = [(os.path.join(AU_FOLDER, f), 0) for f in os.listdir(AU_FOLDER)
+                if os.path.splitext(f)[1].lower() in EXTENSIONS]
+    tampered = [(os.path.join(TP_FOLDER, f), 1) for f in os.listdir(TP_FOLDER)
+                if os.path.splitext(f)[1].lower() in EXTENSIONS]
+    all_data = genuine + tampered
+
+    print(f"Genuine: {len(genuine)}  Tampered: {len(tampered)}  Total: {len(all_data)}")
+
+    random.shuffle(all_data)
+    split = int(len(all_data) * (1 - VAL_SPLIT))
+    return all_data[:split], all_data[split:]
 
 
-# ── Model ─────────────────────────────────────────────────
-# 4 conv blocks — each doubles filters and halves image size
-# then 2 fully connected layers for binary classification
+def get_transforms():
+    """Train gets augmentation, val gets only resize + normalize."""
+    train = transforms.Compose([
+        transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomRotation(10, fill=255),
+        transforms.ToTensor(),
+        transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
+    ])
+    val = transforms.Compose([
+        transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+        transforms.ToTensor(),
+        transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
+    ])
+    return train, val
 
-def conv_block(in_ch, out_ch):
+
+def build_model():
+    """4 conv blocks + 3 FC layers."""
+    def conv_block(in_ch, out_ch):
+        return nn.Sequential(
+            nn.Conv2d(in_ch, out_ch, kernel_size=3, padding=1),
+            nn.BatchNorm2d(out_ch),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+        )
     return nn.Sequential(
-        nn.Conv2d(in_ch, out_ch, kernel_size=3, padding=1),
-        nn.BatchNorm2d(out_ch),
+        conv_block(3,   32),
+        conv_block(32,  64),
+        conv_block(64,  128),
+        conv_block(128, 256),
+        nn.Flatten(),
+        nn.Linear(256 * 8 * 8, 1024),
         nn.ReLU(),
-        nn.MaxPool2d(2),
-    )
-
-model = nn.Sequential(
-    conv_block(3,   32),    # 128 → 64
-    conv_block(32,  64),    # 64  → 32
-    conv_block(64,  128),   # 32  → 16
-    conv_block(128, 256),   # 16  → 8
-    nn.Flatten(),
-    nn.Linear(256 * 8 * 8, 512),
-    nn.ReLU(),
-    nn.Dropout(0.5),
-    nn.Linear(512, 1),
-    nn.Sigmoid(),
-).to(DEVICE)
-
-print(f"\nDevice: {DEVICE}")
-print(f"Parameters: {sum(p.numel() for p in model.parameters()):,}")
+        nn.Dropout(0.5),
+        nn.Linear(1024, 512),
+        nn.ReLU(),
+        nn.Dropout(0.3),
+        nn.Linear(512, 1),
+        nn.Sigmoid(),
+    ).to(DEVICE)
 
 
-# ── Training ──────────────────────────────────────────────
-
-loss_fn   = nn.BCELoss()
-optimizer = optim.Adam(model.parameters(), lr=LR)
-best_val_acc     = 0.0
-no_improve_count = 0
-
-print(f"\nStarting training — {EPOCHS} epochs\n")
-
-for epoch in range(1, EPOCHS + 1):
-
-    # Train
+def train_one_epoch(model, loader, loss_fn, optimizer, epoch):
+    """One pass over training data with batch progress."""
     model.train()
-    train_correct = 0
-    for batch_num, (images, labels) in enumerate(train_loader, 1):
+    correct = 0
+    for batch_num, (images, labels) in enumerate(loader, 1):
         images, labels = images.to(DEVICE), labels.to(DEVICE)
         optimizer.zero_grad()
         outputs = model(images)
         loss    = loss_fn(outputs, labels)
         loss.backward()
         optimizer.step()
-        train_correct += ((outputs >= 0.5).float() == labels).sum().item()
-
-        # Print batch progress every 10 batches
+        correct += ((outputs >= 0.5).float() == labels).sum().item()
         if batch_num % 10 == 0:
-            print(f"  Epoch {epoch}/{EPOCHS} — batch {batch_num}/{len(train_loader)}", end="\r")
+            print(f"  Epoch {epoch}/{EPOCHS} — batch {batch_num}/{len(loader)}", end="\r")
+    return correct / len(loader.dataset)
 
-    train_acc = train_correct / len(train_loader.dataset)
 
-    # Validate
+def validate(model, loader, loss_fn):
+    """One pass over validation data, no gradient updates."""
     model.eval()
-    val_correct  = 0
-    val_loss_sum = 0
+    correct, loss_sum = 0, 0
     with torch.no_grad():
-        for images, labels in val_loader:
+        for images, labels in loader:
             images, labels = images.to(DEVICE), labels.to(DEVICE)
-            outputs      = model(images)
-            val_loss_sum += loss_fn(outputs, labels).item() * images.size(0)
-            val_correct  += ((outputs >= 0.5).float() == labels).sum().item()
+            outputs   = model(images)
+            loss_sum += loss_fn(outputs, labels).item() * images.size(0)
+            correct  += ((outputs >= 0.5).float() == labels).sum().item()
+    return correct / len(loader.dataset), loss_sum / len(loader.dataset)
 
-    val_acc  = val_correct  / len(val_loader.dataset)
-    val_loss = val_loss_sum / len(val_loader.dataset)
 
-    print(f"Epoch {epoch:02d}/{EPOCHS} | Train: {train_acc*100:.1f}% | Val: {val_acc*100:.1f}% | Val Loss: {val_loss:.4f}")
+# ── Main ──────────────────────────────────────────────────
 
-    # Save best model
-    if val_acc > best_val_acc:
-        best_val_acc     = val_acc
-        no_improve_count = 0
-        torch.save(model.state_dict(), MODEL_PATH)
-        print(f"  → Best model saved ({val_acc*100:.1f}%)")
-    else:
-        no_improve_count += 1
+if __name__ == "__main__":
 
-    # Early stop
-    if no_improve_count >= 5:
-        print(f"Early stopping — no improvement for 5 epochs")
-        break
+    print(f"Device: {DEVICE}\n")
 
-print(f"\nDone. Best val accuracy: {best_val_acc*100:.1f}%")
-print(f"Model saved: {MODEL_PATH}")
+    train_data, val_data           = load_and_split()
+    train_transform, val_transform = get_transforms()
+
+    train_loader = DataLoader(ForgeryDataset(train_data, train_transform),
+                              batch_size=BATCH_SIZE, shuffle=True)
+    val_loader   = DataLoader(ForgeryDataset(val_data, val_transform),
+                              batch_size=BATCH_SIZE, shuffle=False)
+
+    model     = build_model()
+    loss_fn   = nn.BCELoss()
+    optimizer = optim.Adam(model.parameters(), lr=LR)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="max", patience=3, factor=0.5)  # ADDED: reduces LR by half if val_acc doesn't improve for 3 epochs
+
+    print(f"Parameters : {sum(p.numel() for p in model.parameters()):,}")
+    print(f"Training   : {len(train_data)}  Val: {len(val_data)}")
+    print(f"\nStarting {EPOCHS} epochs...\n")
+
+    best_val_acc     = 0.0
+    no_improve_count = 0
+
+    #added model more training
+    model.load_state_dict(torch.load(MODEL_PATH))  # add this before the epoch loop
+
+    for epoch in range(1, EPOCHS + 1):
+        train_acc         = train_one_epoch(model, train_loader, loss_fn, optimizer, epoch)
+        val_acc, val_loss = validate(model, val_loader, loss_fn)
+        scheduler.step(val_acc)                                        # ADDED: step scheduler with val accuracy
+        current_lr = optimizer.param_groups[0]["lr"]                   # ADDED: read current LR
+
+        print(f"Epoch {epoch:02d}/{EPOCHS} | Train: {train_acc*100:.1f}% | Val: {val_acc*100:.1f}% | Val Loss: {val_loss:.4f} | LR: {current_lr}")  # CHANGED: added LR to print
+
+        if val_acc > best_val_acc:
+            best_val_acc     = val_acc
+            no_improve_count = 0
+            torch.save(model.state_dict(), MODEL_PATH)
+            print(f"  → Best model saved ({val_acc*100:.1f}%)")
+        else:
+            no_improve_count += 1
+
+        # if no_improve_count >= 5:
+        #     print(f"Early stopping at epoch {epoch}")
+        #     break
+
+    print(f"\nDone. Best val accuracy: {best_val_acc*100:.1f}%")
+    print(f"Model saved: {MODEL_PATH}")
