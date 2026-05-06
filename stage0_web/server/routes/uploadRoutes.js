@@ -6,7 +6,6 @@ const fs = require("fs");
 
 const { uploadFile } = require("../controllers/uploadController");
 
-// ✅ images folder
 const uploadDir = path.join(__dirname, "../../../images");
 
 if (!fs.existsSync(uploadDir)) {
@@ -30,5 +29,10 @@ const upload = multer({ storage });
 
 // ✅ ONLY HERE
 router.post("/upload", upload.single("file"), uploadFile);
+
+router.post("/upload", (req, res, next) => {
+  console.log("🔥 ROUTE HIT");
+  next();
+}, upload.single("file"), uploadFile);
 
 module.exports = router;
