@@ -14,30 +14,28 @@ const path = require("path");
 
 const app = express();
 
-// ✅ Middleware
 app.use(cors());
 app.use(express.json());
 
-// ✅ API ROUTES
+// ✅ API FIRST
 const uploadRoutes = require("./routes/uploadRoutes");
 app.use("/api", uploadRoutes);
 
-// ✅ HEALTH CHECK
+// ✅ HEALTH
 app.get("/health", (req, res) => {
   res.send("OK");
 });
 
-// ✅ SERVE REACT BUILD (VERY IMPORTANT)
+// ✅ FRONTEND BUILD
 const clientPath = path.join(process.cwd(), "stage0_web/client/dist");
-
 app.use(express.static(clientPath));
 
-// ✅ HANDLE ALL ROUTES (React Router)
-app.get("*", (req, res) => {
+// ✅ FINAL FIX (NO ROUTE PATTERN)
+app.use((req, res) => {
   res.sendFile(path.join(clientPath, "index.html"));
 });
 
-// ✅ PORT FIX FOR RENDER
+// ✅ PORT
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
