@@ -1,40 +1,47 @@
-const axios = require("axios");
+const { exec } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
-exports.uploadFile = async (req, res) => {
+exports.uploadFile = (req, res) => {
   try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
     const filePath = path.resolve(req.file.path);
 
     console.log("📂 Uploaded:", filePath);
 
-  
-    const response = await axios.post("http://127.0.0.1:8000/detect", {
-      filePath: filePath
-    });
+    // 🧠 Run Python
+    const command = `python ../stage_1/main.py "${filePath}"`;
 
-    const { result, confidence } = response.data;
-
-    res.json({
-      filename: req.file.originalname,
-      result,
-      confidence
-    });
-
-    setTimeout(() => {
-      if (fs.existsSync(filePath)) {
-        fs.unlink(filePath, (err) => {
-          if (err) console.error("❌ Delete failed:", err);
-          else console.log("✅ File deleted:", filePath);
-        });
+    exec(command, (error, stdout, stderr) => {
+      if (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Python failed" });
       }
-    }, 1000);
 
-  } catch (error) {
-    console.error("❌ Error:", error.message);
+      let data;
+      try {
+        data = JSON.parse(stdout);
+      } catch (e) {
+        return res.status(500).json({ message: "Invalid Python output" });
+      }
 
-    res.status(500).json({
-      message: "Processing failed. Is Python server running?"
+      res.json({
+        filename: req.file.originalname,
+        result: data.verdict,
+        confidence: data.score
+      });
+
+      // 🧹 delete file
+      setTimeout(() => {
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      }, 1000);
     });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
   }
 };
