@@ -4,7 +4,7 @@
   "main": "stage0_web/server/server.js",
   "scripts": {
     "start": "node stage0_web/server/server.js",
-    "build-client": "cd stage0_web/client && npm install && npm run build"
+    "build": "cd stage0_web/client && npm install && npm run build"
   },
   "dependencies": {
     "express": "^4.18.2",
