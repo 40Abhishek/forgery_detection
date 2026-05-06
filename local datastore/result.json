@@ -1,0 +1,88 @@
+{
+  "file": {
+    "name": "admit.pdf",
+    "type": "vector_pdf",
+    "pipeline": "pdf"
+  },
+  "verdict": "GENUINE",
+  "risk_score": 18.64,
+  "risk_level": "LOW",
+  "breakdown": {
+    "pdf_score": 7.14,
+    "pdf_weighted": 4.64,
+    "pdf_weight": "65%",
+    "ocr_score": 40.0,
+    "ocr_weighted": 14.0,
+    "ocr_weight": "35%"
+  },
+  "anomalies": [
+    {
+      "stage": "PDF Forensics",
+      "check": "FONTS",
+      "detail": "High font variety: 5 — ['Amiri-Regular', 'ArialMT', 'LiberationSans', 'SegoeUI', 'SegoeUI-Bold']"
+    },
+    {
+      "stage": "OCR",
+      "check": "SPELLING",
+      "detail": "15 misspelled word(s) out of 83 checked"
+    }
+  ],
+  "ocr_text": "Central University of Haryana\n(NAAC Accredited `A` Grade University) \nEstablished vide Act No. 25(2009) of Parliament, Jant-Pali, Mahendergarh(HR)-123031 \n    Hall Ticket Regular Examination (Term End Examination) \n  Roll Number   240474\n  Name   MANISH KUMAR\n  Father Name   DINESH KUMAR\n  Mother Name   SAROJ\n  Semester \n  Session \n  Email   manishjasoria28082003@gmail.com\n  Mobile   9350782093\n  Department   Department of Computer Sciences and Information Technology\n  Programme   MCA : Master of Computer Application\nS.No. Course Code Course Name InvigilatorSignature\n1  \n2  \n3  \n4  \n5  \n6  \n7 \n  \n8  \n \nPrinted on: 25-04-2026 08:22:19\n4/25/26, 8:22 AM cuh.samarth.edu.in/index.php/examstudent/hall-admit-card/view?id=5f384013982f88c198479eeb4c128cbff8b31de596f7751d7…\nhttps://cuh.samarth.edu.in/index.php/examstudent/hall-admit-card/view?id=5f384013982f88c198479eeb4c128cbff8b31de596f7751d7360b836c8d… 1/1\n    Wireless Sensor Networks and Internet of Things\n    Data Science with R Programming",
+  "stages": {
+    "pdf_forensics": {
+      "pdf_score": 7.14,
+      "overall_suspicious": false,
+      "metadata_flags": [],
+      "incremental_flags": [],
+      "font_flags": [
+        "High font variety: 5 — ['Amiri-Regular', 'ArialMT', 'LiberationSans', 'SegoeUI', 'SegoeUI-Bold']"
+      ],
+      "producer_flags": []
+    },
+    "ocr": {
+      "ocr_score": 40.0,
+      "overall_suspicious": true,
+      "word_count": 183,
+      "source": "pypdf",
+      "spelling": {
+        "misspelled": [
+          "examination)",
+          "haryana",
+          "parliament,",
+          "s.no.",
+          "invigilatorsignature",
+          "on:",
+          "(in",
+          "house)",
+          "lab-ii",
+          "university)"
+        ],
+        "score": 0.181,
+        "suspicious": true,
+        "detail": "15 misspelled word(s) out of 83 checked"
+      },
+      "dates": {
+        "found": [
+          "25-04-2026"
+        ],
+        "invalid": [],
+        "suspicious": false,
+        "detail": "1 date(s) found, 0 invalid"
+      },
+      "numeric": {
+        "fields": {
+          "pin_code": [
+            "123031",
+            "240474"
+          ],
+          "phone": [
+            "9350782093"
+          ]
+        },
+        "flags": [],
+        "suspicious": false,
+        "detail": "3 numeric field(s) found, 0 invalid"
+      }
+    }
+  }
+}

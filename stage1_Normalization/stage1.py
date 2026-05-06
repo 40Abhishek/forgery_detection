@@ -121,7 +121,9 @@ def run_input_normalization(file_path):
         print(f"  ERROR: {e}")
         return {
             "file_type"  : None,
-            "status"     : "error"
+            "status"  : "error",
+            "message" : e
+
         }
 
     #ext = os.path.splitext(file_path)[1].lower()
