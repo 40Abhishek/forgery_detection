@@ -1,0 +1,92 @@
+{
+  "file": {
+    "name": "1778046771023-Tp_D_CRN_S_N_nat10145_ani00022_11986.jpg",
+    "type": "image",
+    "pipeline": "image"
+  },
+  "verdict": "FORGED",
+  "risk_score": 60.23,
+  "risk_level": "HIGH",
+  "breakdown": {
+    "forensics_score": 61.22,
+    "forensics_weighted": 21.43,
+    "forensics_weight": "35%",
+    "cnn_score": 97.01,
+    "cnn_weighted": 38.8,
+    "cnn_weight": "40%",
+    "ocr_score": 0.0,
+    "ocr_weighted": 0.0,
+    "ocr_weight": "25%"
+  },
+  "anomalies": [
+    {
+      "stage": "Image Forensics",
+      "check": "NOISE",
+      "detail": "Noise inconsistency = 12.72  (limit 6.0)"
+    },
+    {
+      "stage": "Image Forensics",
+      "check": "COPY_MOVE",
+      "detail": "Matching block pairs found = 16366"
+    },
+    {
+      "stage": "CNN Detection",
+      "check": "CNN",
+      "detail": "CNN confidence of forgery = 97.01%"
+    }
+  ],
+  "ocr_text": "",
+  "stages": {
+    "image_forensics": {
+      "forensics_score": 61.22,
+      "overall_suspicious": true,
+      "ela": {
+        "score": 0.73,
+        "suspicious": false,
+        "detail": "ELA mean brightness = 0.729  (limit 12.0)"
+      },
+      "noise": {
+        "score": 12.72,
+        "suspicious": true,
+        "detail": "Noise inconsistency = 12.72  (limit 6.0)"
+      },
+      "copy_move": {
+        "count": 16366,
+        "suspicious": true,
+        "detail": "Matching block pairs found = 16366"
+      },
+      "heatmap_path": "local datastore/heatmap.png",
+      "annotated_path": ""
+    },
+    "cnn": {
+      "cnn_score": 97.01,
+      "raw_score": 0.9701,
+      "suspicious": true,
+      "detail": "CNN confidence of forgery = 97.01%"
+    },
+    "ocr": {
+      "ocr_score": 0.0,
+      "overall_suspicious": false,
+      "word_count": 0,
+      "source": "easyocr",
+      "spelling": {
+        "misspelled": [],
+        "score": 0.0,
+        "suspicious": false,
+        "detail": "No checkable words found"
+      },
+      "dates": {
+        "found": [],
+        "invalid": [],
+        "suspicious": false,
+        "detail": "0 date(s) found, 0 invalid"
+      },
+      "numeric": {
+        "fields": {},
+        "flags": [],
+        "suspicious": false,
+        "detail": "0 numeric field(s) found, 0 invalid"
+      }
+    }
+  }
+}

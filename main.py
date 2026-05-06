@@ -305,6 +305,8 @@ if __name__ == "__main__":
     # Takes filename from command line, looks for it in images/ folder
     input_path = os.path.join("images", sys.argv[1])
 
+    print("file found:", input_path,"\n\n\n")
+
     if not os.path.exists(input_path):
         print(f"[ERROR] File not found: {input_path}")
         sys.exit(1)

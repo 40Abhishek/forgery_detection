@@ -2,7 +2,8 @@ const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
 
-const RESULT_PATH = path.join(__dirname, "../../results/result.json");
+// ✅ FIXED PATH (NO SPACE FOLDER RECOMMENDED)
+const RESULT_PATH = path.join(__dirname, "../../../results/result.json");
 
 exports.uploadFile = (req, res) => {
   try {
@@ -13,12 +14,10 @@ exports.uploadFile = (req, res) => {
     }
 
     const filePath = path.resolve(req.file.path);
-
     console.log("📂 Sending to Python:", filePath);
 
-    // 🔥 RUN PYTHON MAIN.PY
     const python = spawn("python", [
-      path.join(__dirname, "../../main.py"),
+      path.join(__dirname, "../../../main.py"),
       filePath
     ]);
 
@@ -31,27 +30,37 @@ exports.uploadFile = (req, res) => {
     });
 
     python.on("close", () => {
-
       console.log("✅ Python finished");
 
-      // 🔥 READ RESULT JSON
-      let result = null;
+      // 🔥 WAIT before reading JSON (VERY IMPORTANT)
+      setTimeout(() => {
 
-      try {
-        if (fs.existsSync(RESULT_PATH)) {
-          result = JSON.parse(fs.readFileSync(RESULT_PATH, "utf-8"));
+        let result = null;
+
+        try {
+          console.log("📄 Reading JSON from:", RESULT_PATH);
+
+          if (fs.existsSync(RESULT_PATH)) {
+            const raw = fs.readFileSync(RESULT_PATH, "utf-8");
+            result = JSON.parse(raw);
+
+            console.log("📊 RESULT:", result);
+          } else {
+            console.log("❌ result.json NOT FOUND");
+          }
+
+        } catch (err) {
+          console.log("❌ JSON ERROR:", err.message);
         }
-      } catch (err) {
-        console.log("❌ JSON read error:", err.message);
-      }
 
-      // 🔥 SEND RESPONSE TO FRONTEND
-      return res.status(200).json({
-        success: true,
-        message: "File processed",
-        file: req.file.filename,
-        result: result || { message: "No result found" }
-      });
+        return res.status(200).json({
+          success: true,
+          message: "File processed",
+          file: req.file.filename,
+          result: result || { message: "No result found" }
+        });
+
+      }, 800); // 🔥 delay fix
     });
 
   } catch (err) {

@@ -1,15 +1,15 @@
 {
   "file": {
-    "name": "admit.pdf",
+    "name": "1778048699423-manish.pdf",
     "type": "vector_pdf",
     "pipeline": "pdf"
   },
-  "verdict": "GENUINE",
-  "risk_score": 18.64,
-  "risk_level": "LOW",
+  "verdict": "SUSPICIOUS",
+  "risk_score": 37.21,
+  "risk_level": "MEDIUM",
   "breakdown": {
-    "pdf_score": 7.14,
-    "pdf_weighted": 4.64,
+    "pdf_score": 35.71,
+    "pdf_weighted": 23.21,
     "pdf_weight": "65%",
     "ocr_score": 40.0,
     "ocr_weighted": 14.0,
@@ -18,70 +18,65 @@
   "anomalies": [
     {
       "stage": "PDF Forensics",
-      "check": "FONTS",
-      "detail": "High font variety: 5 — ['Amiri-Regular', 'ArialMT', 'LiberationSans', 'SegoeUI', 'SegoeUI-Bold']"
+      "check": "METADATA",
+      "detail": "Editing tool detected in creator: 'canva'"
+    },
+    {
+      "stage": "PDF Forensics",
+      "check": "METADATA",
+      "detail": "Large gap between creation and modification: 254 days"
     },
     {
       "stage": "OCR",
       "check": "SPELLING",
-      "detail": "15 misspelled word(s) out of 83 checked"
+      "detail": "9 misspelled word(s) out of 29 checked"
     }
   ],
-  "ocr_text": "Central University of Haryana\n(NAAC Accredited `A` Grade University) \nEstablished vide Act No. 25(2009) of Parliament, Jant-Pali, Mahendergarh(HR)-123031 \n    Hall Ticket Regular Examination (Term End Examination) \n  Roll Number   240474\n  Name   MANISH KUMAR\n  Father Name   DINESH KUMAR\n  Mother Name   SAROJ\n  Semester \n  Session \n  Email   manishjasoria28082003@gmail.com\n  Mobile   9350782093\n  Department   Department of Computer Sciences and Information Technology\n  Programme   MCA : Master of Computer Application\nS.No. Course Code Course Name InvigilatorSignature\n1  \n2  \n3  \n4  \n5  \n6  \n7 \n  \n8  \n \nPrinted on: 25-04-2026 08:22:19\n4/25/26, 8:22 AM cuh.samarth.edu.in/index.php/examstudent/hall-admit-card/view?id=5f384013982f88c198479eeb4c128cbff8b31de596f7751d7…\nhttps://cuh.samarth.edu.in/index.php/examstudent/hall-admit-card/view?id=5f384013982f88c198479eeb4c128cbff8b31de596f7751d7360b836c8d… 1/1\n    Wireless Sensor Networks and Internet of Things\n    Data Science with R Programming",
+  "ocr_text": "CERTIFICATE OF INTERNSHIP\n \nThis internship program certificate is proudly\nawarded to\nFor his outstanding completion of the Content Writinginternship program at The Content Champion Co. from April \nAshutosh Tiwari Ronik Singha\nProject ManagerFounder\nManish Kumar\nto September 2023.",
   "stages": {
     "pdf_forensics": {
-      "pdf_score": 7.14,
-      "overall_suspicious": false,
-      "metadata_flags": [],
-      "incremental_flags": [],
-      "font_flags": [
-        "High font variety: 5 — ['Amiri-Regular', 'ArialMT', 'LiberationSans', 'SegoeUI', 'SegoeUI-Bold']"
+      "pdf_score": 35.71,
+      "overall_suspicious": true,
+      "metadata_flags": [
+        "Editing tool detected in creator: 'canva'",
+        "Large gap between creation and modification: 254 days"
       ],
+      "incremental_flags": [],
+      "font_flags": [],
       "producer_flags": []
     },
     "ocr": {
       "ocr_score": 40.0,
       "overall_suspicious": true,
-      "word_count": 183,
+      "word_count": 38,
       "source": "pypdf",
       "spelling": {
         "misspelled": [
-          "examination)",
-          "haryana",
-          "parliament,",
-          "s.no.",
-          "invigilatorsignature",
-          "on:",
-          "(in",
-          "house)",
-          "lab-ii",
-          "university)"
+          "kumar",
+          "manish",
+          "singha",
+          "co.",
+          "ronik",
+          "tiwari",
+          "writinginternship",
+          "managerfounder",
+          "ashutosh"
         ],
-        "score": 0.181,
+        "score": 0.31,
         "suspicious": true,
-        "detail": "15 misspelled word(s) out of 83 checked"
+        "detail": "9 misspelled word(s) out of 29 checked"
       },
       "dates": {
-        "found": [
-          "25-04-2026"
-        ],
+        "found": [],
         "invalid": [],
         "suspicious": false,
-        "detail": "1 date(s) found, 0 invalid"
+        "detail": "0 date(s) found, 0 invalid"
       },
       "numeric": {
-        "fields": {
-          "pin_code": [
-            "123031",
-            "240474"
-          ],
-          "phone": [
-            "9350782093"
-          ]
-        },
+        "fields": {},
         "flags": [],
         "suspicious": false,
-        "detail": "3 numeric field(s) found, 0 invalid"
+        "detail": "0 numeric field(s) found, 0 invalid"
       }
     }
   }

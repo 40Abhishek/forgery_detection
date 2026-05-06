@@ -1,14 +1,17 @@
+import { useNavigate } from "react-router-dom";
 import React, { useRef, useState } from "react";
 import { uploadFile } from "../services/api";
 
 export default function FileUploader() {
   const inputRef = useRef(null);
+  const navigate = useNavigate();
+
   const [files, setFiles] = useState([]);
   const [dragActive, setDragActive] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState([]);
   const [error, setError] = useState("");
 
+  // ✅ Handle file selection (IMAGE + PDF)
   const handleFiles = (selectedFiles) => {
     const fileArray = Array.from(selectedFiles);
 
@@ -16,7 +19,10 @@ export default function FileUploader() {
     let hasInvalid = false;
 
     fileArray.forEach((file) => {
-      if (file.type.startsWith("image/")) {
+      if (
+        file.type.startsWith("image/") ||
+        file.type === "application/pdf"
+      ) {
         validFiles.push(file);
       } else {
         hasInvalid = true;
@@ -24,7 +30,7 @@ export default function FileUploader() {
     });
 
     if (hasInvalid) {
-      setError("Only image files are allowed. Please re-upload.");
+      setError("Only image or PDF files are allowed.");
     } else {
       setError("");
     }
@@ -34,35 +40,34 @@ export default function FileUploader() {
     }
   };
 
+  // Drag & Drop
   const handleDrop = (e) => {
     e.preventDefault();
     setDragActive(false);
     handleFiles(e.dataTransfer.files);
   };
 
+  // Remove file
   const removeFile = (index) => {
     setFiles(files.filter((_, i) => i !== index));
   };
 
+  // Upload + Navigate
   const handleUpload = async () => {
-    if (files.length === 0) {
-      setError("Please select at least one image.");
-      return;
-    }
+    if (files.length === 0) return;
 
     try {
       setLoading(true);
-      setError("");
 
-      const uploadedResults = [];
+      const res = await uploadFile(files[0]); // single file
 
-      for (let file of files) {
-        const res = await uploadFile(file);
-        uploadedResults.push(res);
-      }
+      console.log("API RESPONSE:", res);
 
-      setResults(uploadedResults);
       setLoading(false);
+
+      // 🔥 Send result to Result page
+      navigate("/result", { state: { results: res } });
+
     } catch (error) {
       console.error(error);
       setError("Upload failed. Try again.");
@@ -95,18 +100,18 @@ export default function FileUploader() {
           <div className="text-3xl sm:text-4xl md:text-5xl mb-3 sm:mb-4">📂</div>
 
           <h2 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-white">
-            Upload Only Images
+            Upload Image or PDF
           </h2>
 
           <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-2">
-            JPG, PNG, JPEG supported
+            JPG, PNG, JPEG, PDF supported
           </p>
 
           <input
             ref={inputRef}
             type="file"
             multiple
-            accept="image/*"
+            accept="image/*,.pdf"
             className="hidden"
             onChange={(e) => handleFiles(e.target.files)}
           />
@@ -154,26 +159,6 @@ export default function FileUploader() {
             >
               {loading ? "Processing..." : "Upload & Detect"}
             </button>
-          </div>
-        )}
-
-        {/* Results */}
-        {results.length > 0 && (
-          <div className="mt-6 sm:mt-8 space-y-3 sm:space-y-4">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-white">
-              Results
-            </h3>
-
-            {results.map((res, index) => (
-              <div
-                key={index}
-                className="p-3 sm:p-4 border rounded-lg bg-gray-50 dark:bg-gray-800 text-xs sm:text-sm"
-              >
-                <p><strong>File:</strong> {res.filename}</p>
-                <p><strong>Status:</strong> {res.result}</p>
-                <p><strong>Confidence:</strong> {res.confidence}%</p>
-              </div>
-            ))}
           </div>
         )}
 

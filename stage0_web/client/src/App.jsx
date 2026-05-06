@@ -10,6 +10,7 @@ import Main from "./pages/Main";
 import Features from "./pages/Features";
 import About from "./pages/About";
 import GetStarted from "./pages/GetStarted";
+import Result from "./pages/result"
 
 import { Routes, Route } from "react-router-dom";
 
@@ -35,15 +36,16 @@ function App() {
 
       {/* 🔥 ROUTES ADDED HERE */}
       <div className="flex-grow">
-        <Routes>
-          <Route path="/" element={<Main />} />
-          <Route path="/features" element={<Features />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/get-started" element={<GetStarted />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/contact" element={<Contact />} />
-        </Routes>
+      <Routes>
+        <Route path="/" element={<Main />} />
+        <Route path="/features" element={<Features />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/get-started" element={<GetStarted />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/result" element={<Result />} />
+      </Routes>
       </div>
 
       <Footer />
