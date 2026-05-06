@@ -1,0 +1,7 @@
+opencv-python
+pypdf
+numpy
+torch
+torchvision
+easyocr
+pyspellchecker
