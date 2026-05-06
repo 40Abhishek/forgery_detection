@@ -1,5 +1,5 @@
 import os
-import cv2
+from cv2 import imread,imwrite
 from pypdf import PdfReader
 
 path   = ""
@@ -30,14 +30,14 @@ def detect_pdf_type(pdf_path):
 def handle_image(file_path):
     #Returns : path to the normalized PNG
 
-    image = cv2.imread(file_path)
+    image = imread(file_path)
     if image is None:
         raise ValueError("Could not read image file: " + file_path)
 
     # save to working directory
     output_path = working_directory+"\\"+"main.png"
     print(output_path)
-    cv2.imwrite(output_path, image)
+    imwrite(output_path, image)
     return output_path
 
 

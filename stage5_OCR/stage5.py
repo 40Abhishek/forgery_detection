@@ -16,15 +16,15 @@ from pypdf import PdfReader
 
 path = "local datastore/main.pdf"
 
-print("[Stage 5] Loading EasyOCR model")
-reader = easyocr.Reader(["en", "hi"], gpu=False)
-spell  = SpellChecker()
 
 
 # ── Text Extraction ───────────────────────────────────────
 
 def extract_text_from_image(image_path):
     """Uses EasyOCR to extract text from image files (JPG, PNG)."""
+        
+    print("[Stage 5] Loading EasyOCR model")
+    reader = easyocr.Reader(["en", "hi"], gpu=False)
     raw        = reader.readtext(image_path)
     detections = [{"text": text.strip(), "confidence": round(conf, 3)}
                   for (_, text, conf) in raw if conf >= 0.5]
@@ -76,6 +76,7 @@ def check_spelling(word_list):
         return {"misspelled": [], "spell_score": 0.0, "suspicious": False,
                 "detail": "No checkable words found"}
 
+    spell  = SpellChecker()
     misspelled  = list(spell.unknown(checkable))
     spell_score = round(len(misspelled) / len(checkable), 3)
     return {
