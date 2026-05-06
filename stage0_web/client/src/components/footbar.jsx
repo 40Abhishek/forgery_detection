@@ -15,7 +15,7 @@ const Footer = () => {
             </span>
           </div>
 
-          {/* Links */}
+          
           <div className="flex gap-8 text-sm font-medium text-gray-500 dark:text-gray-400">
             
             <Link to="/privacy" className="hover:text-black dark:hover:text-white transition">
