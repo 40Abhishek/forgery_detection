@@ -3,13 +3,13 @@ import "./App.css";
 
 import Navbar from "./components/navbar";
 import Footer from "./components/footbar";
-import terms from "./pages/Terms";
-import privacy from "./pages/Privacy";
-import contact from "./pages/Contact";
-import main from "./pages/Main";
-import features from "./pages/Features";
-import about from "./pages/About";
-import getStarted from "./pages/GetStarted";
+import terms from "./pages/terms";
+import privacy from "./pages/privacy";
+import contact from "./pages/contact";
+import main from "./pages/main";
+import features from "./pages/features";
+import about from "./pages/about";
+import getStarted from "./pages/getStarted";
 import result from "./pages/result"
 
 import { Routes, Route } from "react-router-dom";
