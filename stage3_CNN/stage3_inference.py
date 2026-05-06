@@ -5,7 +5,7 @@ import cv2
 from torchvision import transforms
 import os
 
-MODEL_PATH = "model.pth"
+MODEL_PATH = "/opt/render/project/src/model.pth"
 IMAGE_SIZE = 128
 DEVICE     = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
