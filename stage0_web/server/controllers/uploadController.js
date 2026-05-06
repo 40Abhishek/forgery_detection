@@ -2,23 +2,34 @@ const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
 
-// ✅ FIXED PATH (NO SPACE FOLDER RECOMMENDED)
-const RESULT_PATH = path.join(__dirname, "../../../results/result.json");
-
 exports.uploadFile = (req, res) => {
   try {
     console.log("🔥 CONTROLLER HIT");
 
     if (!req.file) {
-      return res.status(400).json({ success: false, message: "No file uploaded" });
+      return res.status(400).json({
+        success: false,
+        message: "No file uploaded"
+      });
     }
 
     const filePath = path.resolve(req.file.path);
-    console.log("📂 Sending to Python:", filePath);
 
-    const python = spawn("python", [
+    // ✅ CREATE UNIQUE RESULT FILE
+    const resultFile = path.join(
+      __dirname,
+      "../../../results",
+      `${Date.now()}-result.json`
+    );
+
+    console.log("📂 File sent to Python:", filePath);
+    console.log("📄 Result will be saved at:", resultFile);
+
+    // ✅ USE python3 (IMPORTANT FOR RENDER)
+    const python = spawn("python3", [
       path.join(__dirname, "../../../main.py"),
-      filePath
+      filePath,
+      resultFile
     ]);
 
     python.stdout.on("data", (data) => {
@@ -26,29 +37,26 @@ exports.uploadFile = (req, res) => {
     });
 
     python.stderr.on("data", (data) => {
-      console.log("PY ERROR:", data.toString());
+      console.log("❌ PY ERROR:", data.toString());
     });
 
     python.on("close", () => {
       console.log("✅ Python finished");
 
-      // 🔥 WAIT before reading JSON (VERY IMPORTANT)
+      // 🔥 WAIT for JSON creation
       setTimeout(() => {
-
         let result = null;
 
         try {
-          console.log("📄 Reading JSON from:", RESULT_PATH);
+          console.log("📄 Reading JSON from:", resultFile);
 
-          if (fs.existsSync(RESULT_PATH)) {
-            const raw = fs.readFileSync(RESULT_PATH, "utf-8");
+          if (fs.existsSync(resultFile)) {
+            const raw = fs.readFileSync(resultFile, "utf-8");
             result = JSON.parse(raw);
-
             console.log("📊 RESULT:", result);
           } else {
-            console.log("❌ result.json NOT FOUND");
+            console.log("❌ Result file not found");
           }
-
         } catch (err) {
           console.log("❌ JSON ERROR:", err.message);
         }
@@ -60,7 +68,7 @@ exports.uploadFile = (req, res) => {
           result: result || { message: "No result found" }
         });
 
-      }, 800); // 🔥 delay fix
+      }, 1000); // slight delay for safety
     });
 
   } catch (err) {
