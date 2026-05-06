@@ -1,47 +1,65 @@
-const { exec } = require("child_process");
-const fs = require("fs");
 const path = require("path");
+const fs = require("fs");
+const { spawn } = require("child_process");
+
+const RESULT_PATH = path.join(__dirname, "../../results/result.json");
 
 exports.uploadFile = (req, res) => {
   try {
+    console.log("🔥 CONTROLLER HIT");
+
     if (!req.file) {
-      return res.status(400).json({ message: "No file uploaded" });
+      return res.status(400).json({ success: false, message: "No file uploaded" });
     }
 
     const filePath = path.resolve(req.file.path);
 
-    console.log("📂 Uploaded:", filePath);
+    console.log("📂 Sending to Python:", filePath);
 
-    // 🧠 Run Python
-    const command = `python ../stage_1/main.py "${filePath}"`;
+    // 🔥 RUN PYTHON MAIN.PY
+    const python = spawn("python", [
+      path.join(__dirname, "../../main.py"),
+      filePath
+    ]);
 
-    exec(command, (error, stdout, stderr) => {
-      if (error) {
-        console.error(error);
-        return res.status(500).json({ message: "Python failed" });
-      }
+    python.stdout.on("data", (data) => {
+      console.log("PY:", data.toString());
+    });
 
-      let data;
+    python.stderr.on("data", (data) => {
+      console.log("PY ERROR:", data.toString());
+    });
+
+    python.on("close", () => {
+
+      console.log("✅ Python finished");
+
+      // 🔥 READ RESULT JSON
+      let result = null;
+
       try {
-        data = JSON.parse(stdout);
-      } catch (e) {
-        return res.status(500).json({ message: "Invalid Python output" });
+        if (fs.existsSync(RESULT_PATH)) {
+          result = JSON.parse(fs.readFileSync(RESULT_PATH, "utf-8"));
+        }
+      } catch (err) {
+        console.log("❌ JSON read error:", err.message);
       }
 
-      res.json({
-        filename: req.file.originalname,
-        result: data.verdict,
-        confidence: data.score
+      // 🔥 SEND RESPONSE TO FRONTEND
+      return res.status(200).json({
+        success: true,
+        message: "File processed",
+        file: req.file.filename,
+        result: result || { message: "No result found" }
       });
-
-      // 🧹 delete file
-      setTimeout(() => {
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-      }, 1000);
     });
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
+    console.log("❌ Controller Error:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: err.message
+    });
   }
 };
