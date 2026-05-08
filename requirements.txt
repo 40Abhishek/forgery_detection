@@ -3,5 +3,5 @@ pypdf
 numpy
 torch
 torchvision
-pytesseract
+easyocr
 pyspellchecker
