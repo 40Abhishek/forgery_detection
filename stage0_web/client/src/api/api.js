@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "/api", // ✅ relative path (works everywhere)
+  baseURL: "http://localhost:5000/api"
 });
 
 export const uploadFile = async (file) => {
@@ -9,8 +9,8 @@ export const uploadFile = async (file) => {
   formData.append("file", file);
 
   const res = await API.post("/upload", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
+    headers: { "Content-Type": "multipart/form-data" }
   });
 
-  return res.data.result;
+  return res.data.result; // 🔥 ONLY RESULT RETURN
 };

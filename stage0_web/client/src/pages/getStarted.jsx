@@ -1,5 +1,5 @@
 import React from "react";
-import fileuploader from "../components/fileuploader";
+import FileUploader from "../components/FileUploader";
 
 export default function GetStarted() {
   return (

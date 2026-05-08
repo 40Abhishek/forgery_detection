@@ -1,17 +1,20 @@
 {
-  "name": "tampering-system",
+  "name": "server",
   "version": "1.0.0",
-  "main": "stage0_web/server/server.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node stage0_web/server/server.js",
-    "build-client": "cd stage0_web/client && npm install && npm run build"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
   "dependencies": {
-    "express": "^4.18.2",
-    "multer": "^1.4.5-lts.1",
-    "cors": "^2.8.5"
-  },
-  "engines": {
-    "node": ">=18"
+    "axios": "^1.13.6",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "mongoose": "^9.3.1",
+    "multer": "^2.1.1"
   }
 }

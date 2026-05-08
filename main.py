@@ -297,34 +297,23 @@ def run_pipeline(input_path, json_output_path="local datastore/result.json"):
 
 if __name__ == "__main__":
     import sys
-    import os
 
     if len(sys.argv) < 2:
-        print("❌ No file path provided")
+        print("file name too small")
         sys.exit(1)
 
-    # ✅ FULL PATH from Node
-    input_path = sys.argv[1]
+    # Takes filename from command line, looks for it in images/ folder
+    input_path = os.path.join("images", sys.argv[1])
 
-    print("📂 Received file path:", input_path)
+    print("file found:", input_path,"\n\n\n")
 
-    # ✅ Check file exists
     if not os.path.exists(input_path):
         print(f"[ERROR] File not found: {input_path}")
         sys.exit(1)
 
-    # ✅ Output JSON path from Node
-    output_path = sys.argv[2] if len(sys.argv) > 2 else "results/result.json"
-
-    # ✅ Ensure directory exists
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-
-    print("📄 Output will be saved at:", output_path)
-
-    # ✅ RUN PIPELINE
-    result = run_pipeline(input_path, output_path)
+    result = run_pipeline(input_path)
 
     if result:
-        print("\n✅ Pipeline complete.")
+        print(f"\nPipeline complete.")
         print(f"Verdict    : {result['verdict']}")
         print(f"Risk Score : {result['risk_score']} / 100")

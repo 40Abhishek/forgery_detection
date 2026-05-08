@@ -1,7 +1,0 @@
-opencv-python-headless
-pypdf
-numpy
-torch
-torchvision
-easyocr
-pyspellchecker
