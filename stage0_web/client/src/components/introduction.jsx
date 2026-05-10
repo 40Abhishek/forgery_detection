@@ -14,7 +14,7 @@ const Introduction = () => {
         mb-3 sm:mb-4
         leading-tight
       ">
-        Document Forgery Detection
+        Document Tampering Detection
       </h1>
 
       <p className="
