@@ -34,7 +34,6 @@ function App() {
 
       <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />
 
-      {/* 🔥 ROUTES ADDED HERE */}
       <div className="flex-grow">
       <Routes>
         <Route path="/" element={<Main />} />

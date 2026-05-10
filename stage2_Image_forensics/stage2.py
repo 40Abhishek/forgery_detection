@@ -255,7 +255,6 @@ def run_image_forensics(image_path,
 
     print(f"\n[Stage 2] Image Forensics")
     print(f"  Input : {image_path}")
-    print("-" * 50)
 
     #run all 
     ela       = run_ela(image_path)
@@ -274,7 +273,6 @@ def run_image_forensics(image_path,
         flag = "SUSPICIOUS" if result["suspicious"] else "OK"
         print(f"  [{flag}]  {name:10} {result['detail']}")
 
-    print("-" * 50)
     print(f"  Forensics Score : {forensics_score} / 100")
     print(f"  Verdict         : {'SUSPICIOUS' if overall_suspicious else 'LIKELY GENUINE'}")
     print(f"  ELA boxes drawn : {ela_boxes}")

@@ -180,7 +180,7 @@ def run_ocr_extraction(file_path):
 
     print(f"\n[Stage 5] OCR Extraction + Validation")
     print(f"  Input : {file_path}")
-    print("-" * 50)
+    
 
     # Choose extractor based on file type
     ext = os.path.splitext(file_path)[1].lower()
@@ -205,7 +205,7 @@ def run_ocr_extraction(file_path):
         flag = "SUSPICIOUS" if result["suspicious"] else "OK"
         print(f"  [{flag}]  {name:10} {result['detail']}")
 
-    print("-" * 50)
+
     print(f"  OCR Score  : {ocr_score} / 100")
     print(f"  Verdict    : {'SUSPICIOUS' if overall_suspicious else 'LIKELY GENUINE'}")
 

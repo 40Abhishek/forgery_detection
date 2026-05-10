@@ -81,7 +81,6 @@ def run_cnn_detection(image_path):
     flag      = "SUSPICIOUS" if cnn_score >= 50.0 else "OK"
 
     print(f"  [{flag}]  CNN confidence of forgery = {cnn_score:.2f}%")
-    print("-" * 50)
     print(f"  CNN Score : {cnn_score} / 100")
 
     return {

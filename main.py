@@ -162,31 +162,27 @@ def build_json_output(file_info, all_results, risk_result):
 def print_final_report(file_info, all_results, risk_result):
     verdict = risk_result["verdict"]
     score   = risk_result["final_score"]
-    colors  = {"GENUINE": "\033[92m", "SUSPICIOUS": "\033[93m", "FORGED": "\033[91m"}
     reset   = "\033[0m"
-    color   = colors.get(verdict, "")
 
-    print("\n" + "=" * 60)
-    print("  DOCUMENT TAMPER DETECTION — FINAL REPORT")
-    print("=" * 60)
+    print("\n-->>DOCUMENT TAMPER DETECTION - FINAL REPORT")
     print(f"  File      : {os.path.basename(file_info['input_path'])}")
     print(f"  Type      : {file_info['file_type']}")
     print(f"  Pipeline  : {risk_result['pipeline_type'].upper()}")
-    print("-" * 60)
-    print(f"  {color}VERDICT     : {verdict}{reset}")
+    print()
+    print(f" VERDICT     : {verdict}{reset}")
     print(f"  RISK SCORE  : {score} / 100")
     print(f"  RISK LEVEL  : {risk_result['risk_level']}")
-    print("-" * 60)
+    print()
 
-    print("\n  SCORE BREAKDOWN:")
+    print("SCORE:")
     for key, value in risk_result["breakdown"].items():
         if "_score" in key:
             label        = key.replace("_score", "").replace("_", " ").upper()
             weight_key   = key.replace("_score", "_weight")
             weighted_key = key.replace("_score", "_weighted")
-            print(f"    {label:20} {value:6} × {risk_result['breakdown'].get(weight_key, '')} = {risk_result['breakdown'].get(weighted_key, '')}")
+            print(f"{label} {value} x {risk_result['breakdown'].get(weight_key, '')} = {risk_result['breakdown'].get(weighted_key, '')}")
 
-    print("\n  ANOMALIES FOUND:")
+    print("\nANOMALIES FOUND:")
     anomalies_found = False
 
     if "stage2" in all_results:
@@ -228,10 +224,9 @@ def print_final_report(file_info, all_results, risk_result):
             print(f"\n  EXTRACTED TEXT (first 300 chars):")
             print(f"    {text[:300]}...")
 
-    print("\n" + "=" * 60)
 
 
-# ── Pipeline ──────────────────────────────────────────────
+# Pipeline
 
 def run_pipeline(input_path, json_output_path="local datastore/result.json"):
     """
@@ -245,7 +240,7 @@ def run_pipeline(input_path, json_output_path="local datastore/result.json"):
     all_results = {}
 
     print("-->> DOCUMENT TAMPER DETECTION SYSTEM")
-    print(f"  Input: {input_path}")
+    print(f"Input: {input_path}")
 
     stage1 = run_input_normalization(input_path)
     if stage1["status"] == "error":
@@ -288,9 +283,9 @@ def run_pipeline(input_path, json_output_path="local datastore/result.json"):
 
     # Build and save JSON output
     json_output = build_json_output(file_info, all_results, risk_result)
-    with open(json_output_path, "w", encoding="utf-8") as f:
-        json.dump(json_output, f, indent=2, ensure_ascii=False)
-    print(f"\n  JSON saved : {json_output_path}")
+    with open(json_output_path, "w") as f:
+        json.dump(json_output, f, ensure_ascii=False)
+    print(f"JSON saved : {json_output_path}")
 
     return json_output
 
@@ -305,7 +300,7 @@ if __name__ == "__main__":
     # Takes filename from command line, looks for it in images/ folder
     input_path = os.path.join("images", sys.argv[1])
 
-    print("file found:", input_path,"\n\n\n")
+    print("file found:", input_path,"\n")
 
     if not os.path.exists(input_path):
         print(f"[ERROR] File not found: {input_path}")
@@ -314,6 +309,6 @@ if __name__ == "__main__":
     result = run_pipeline(input_path)
 
     if result:
-        print(f"\nPipeline complete.")
+        print(f"Pipeline complete.")
         print(f"Verdict    : {result['verdict']}")
         print(f"Risk Score : {result['risk_score']} / 100")

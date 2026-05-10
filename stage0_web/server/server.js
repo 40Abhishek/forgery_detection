@@ -1,11 +1,11 @@
-console.log("🚀 Server file started (DEBUG MODE)");
+console.log("Server file started (DEBUG MODE)");
 
 process.on("uncaughtException", (err) => {
-  console.log("❌ Uncaught Exception:", err);
+  console.log("Uncaught Exception:", err);
 });
 
 process.on("unhandledRejection", (err) => {
-  console.log("❌ Unhandled Rejection:", err);
+  console.log("Unhandled Rejection:", err);
 });
 
 const express = require("express");
@@ -17,7 +17,7 @@ app.use(cors());
 app.use(express.json());
 
 app.get("/", (req, res) => {
-  console.log("✅ Home route hit");
+  console.log("Home route hit");
   res.send("Server is alive");
 });
 
@@ -27,5 +27,5 @@ app.use("/api", uploadRoutes);
 const PORT = 5000;
 
 app.listen(PORT, () => {
-  console.log("🔥 Server running on port", PORT);
+  console.log(" Server running on port", PORT);
 });
