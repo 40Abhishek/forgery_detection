@@ -2,8 +2,11 @@ const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
 
+// ✅ /tmp for result — writable on Render
+const RESULT_PATH = "/tmp/result.json";
 
-const RESULT_PATH = path.join(__dirname, "../../../local datastore/result.json");
+// ✅ main.py path relative to this file (goes up to repo root)
+const MAIN_PY_PATH = path.join(__dirname, "../../../../main.py");
 
 exports.uploadFile = (req, res) => {
   try {
@@ -16,10 +19,8 @@ exports.uploadFile = (req, res) => {
     const filePath = path.resolve(req.file.path);
     console.log("Sending to Python:", filePath);
 
-    const python = spawn("python", [
-      path.join(__dirname, "../../../main.py"),
-      filePath
-    ]);
+    // ✅ python3 not python — Render uses Ubuntu
+    const python = spawn("python3", [MAIN_PY_PATH, filePath]);
 
     python.stdout.on("data", (data) => {
       console.log("PY:", data.toString());
@@ -29,11 +30,10 @@ exports.uploadFile = (req, res) => {
       console.log("PY ERROR:", data.toString());
     });
 
-    python.on("close", () => {
-      console.log("Python finished");
+    python.on("close", (code) => {
+      console.log("Python finished with code:", code);
 
-        setTimeout(() => {
-
+      setTimeout(() => {
         let result = null;
 
         try {
@@ -42,12 +42,10 @@ exports.uploadFile = (req, res) => {
           if (fs.existsSync(RESULT_PATH)) {
             const raw = fs.readFileSync(RESULT_PATH, "utf-8");
             result = JSON.parse(raw);
-
             console.log("RESULT:", result);
           } else {
             console.log("result.json NOT FOUND");
           }
-
         } catch (err) {
           console.log("JSON ERROR:", err.message);
         }
@@ -58,13 +56,11 @@ exports.uploadFile = (req, res) => {
           file: req.file.filename,
           result: result || { message: "No result found" }
         });
-
       }, 800);
     });
 
   } catch (err) {
     console.log("Controller Error:", err);
-
     return res.status(500).json({
       success: false,
       message: err.message

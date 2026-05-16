@@ -1,12 +1,12 @@
 const express = require("express");
 const router = express.Router();
-const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
-
+const multer = require("multer");
 const { uploadFile } = require("../controllers/uploadController");
 
-const uploadDir = path.join(__dirname, "../../../images");
+// ✅ Use /tmp — only writable directory on Render
+const uploadDir = "/tmp/uploads";
 
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
@@ -20,19 +20,13 @@ const storage = multer.diskStorage({
     const cleanName = file.originalname
       .replace(/\s+/g, "_")
       .replace(/[^\w.-]/g, "");
-
     cb(null, Date.now() + "-" + cleanName);
   }
 });
 
 const upload = multer({ storage });
 
-// ✅ ONLY HERE
+// ✅ Single route only — duplicate removed
 router.post("/upload", upload.single("file"), uploadFile);
-
-router.post("/upload", (req, res, next) => {
-  console.log("🔥 ROUTE HIT");
-  next();
-}, upload.single("file"), uploadFile);
 
 module.exports = router;
