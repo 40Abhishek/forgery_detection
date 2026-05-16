@@ -281,7 +281,6 @@ def run_pipeline(input_path, json_output_path="local datastore/result.json"):
 
     print_final_report(file_info, all_results, risk_result)
 
-    # Build and save JSON output
     json_output = build_json_output(file_info, all_results, risk_result)
     with open(json_output_path, "w") as f:
         json.dump(json_output, f, ensure_ascii=False)
@@ -294,19 +293,21 @@ if __name__ == "__main__":
     import sys
 
     if len(sys.argv) < 2:
-        print("file name too small")
+        print("Usage: python main.py <file_path> [output_path]")
         sys.exit(1)
 
-    # Takes filename from command line, looks for it in images/ folder
-    input_path = os.path.join("images", sys.argv[1])
+  
+    input_path = sys.argv[1]
 
-    print("file found:", input_path,"\n")
+    json_output_path = sys.argv[2] if len(sys.argv) > 2 else "/tmp/result.json"
+
+    print("file found:", input_path, "\n")
 
     if not os.path.exists(input_path):
         print(f"[ERROR] File not found: {input_path}")
         sys.exit(1)
 
-    result = run_pipeline(input_path)
+    result = run_pipeline(input_path, json_output_path)
 
     if result:
         print(f"Pipeline complete.")

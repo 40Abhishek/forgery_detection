@@ -2,10 +2,8 @@ const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
 
-// ✅ /tmp for result — writable on Render
 const RESULT_PATH = "/tmp/result.json";
 
-// ✅ main.py path relative to this file (goes up to repo root)
 const MAIN_PY_PATH = path.join(__dirname, "../../../../main.py");
 
 exports.uploadFile = (req, res) => {
@@ -19,8 +17,11 @@ exports.uploadFile = (req, res) => {
     const filePath = path.resolve(req.file.path);
     console.log("Sending to Python:", filePath);
 
-    // ✅ python3 not python — Render uses Ubuntu
-    const python = spawn("python3", [MAIN_PY_PATH, filePath]);
+    const python = spawn("python3", [
+    MAIN_PY_PATH,
+    filePath,
+    "/tmp/result.json"
+    ]);
 
     python.stdout.on("data", (data) => {
       console.log("PY:", data.toString());
