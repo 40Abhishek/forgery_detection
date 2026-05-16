@@ -16,7 +16,7 @@ const app = express();
 app.use(cors({
   origin: [
     "http://localhost:5173",
-    "https://docstampdetect.onrender.com/"
+    "https://docstampdetect.onrender.com"
   ]
 }));
 
