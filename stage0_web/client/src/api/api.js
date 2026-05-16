@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://dtds-mm7w.onrender.com/api"
+  baseURL: "https://dtds-6rku.onrender.com/api"
 });
 
 export const uploadFile = async (file) => {
