@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import React, { useRef, useState } from "react";
-import { uploadFile } from "../services/api";
+import { uploadFile } from "../api/api";
 
 export default function FileUploader() {
   const inputRef = useRef(null);
