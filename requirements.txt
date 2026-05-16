@@ -1,0 +1,20 @@
+# Image processing
+opencv-python-headless
+numpy
+Pillow
+
+# PDF processing
+pypdf
+
+# OCR
+easyocr
+
+# Spell checking
+pyspellchecker
+
+# Deep learning
+torch
+torchvision
+
+# Utilities
+requests

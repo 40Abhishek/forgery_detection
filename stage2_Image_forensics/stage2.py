@@ -30,7 +30,7 @@ def run_ela(image_path):
     """
     original = cv2.imread(image_path)
 
-    temp_path = "local datastore/ela_temp.jpg"
+    temp_path = "/tmp/ela_temp.jpg"
     cv2.imwrite(temp_path, original, [cv2.IMWRITE_JPEG_QUALITY, 90])
     recompressed = cv2.imread(temp_path)
 

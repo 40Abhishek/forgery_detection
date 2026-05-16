@@ -5,11 +5,12 @@ import cv2
 from torchvision import transforms
 import os
 
-MODEL_PATH = "model.pth"
+# ✅ model.pth is at repo root — 2 levels up from stage3_CNN/
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "../../model.pth")
 IMAGE_SIZE = 128
 DEVICE     = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-path = "local datastore/main.png"
+path = "/tmp/main.png"
 
 
 # ── Model — must match build_model() in training exactly ──
@@ -41,14 +42,15 @@ def build_model():
 
 # ── Load model once ───────────────────────────────────────
 print("[Stage 3] Loading CNN model...")
-os.chdir("../../")
+
+# ✅ Removed os.chdir("../../") — was breaking all other file paths globally
 try:
     model = build_model()
     model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
     model.eval()
     print(f"[Stage 3] Model loaded from {MODEL_PATH}")
 except FileNotFoundError:
-    print("CURRENT DIR:::::",os.getcwd(),"\n\n\n")
+    print("CURRENT DIR:::::", os.getcwd())
     raise FileNotFoundError(f"Model not found: {MODEL_PATH} — run stage3_train.py first")
 
 
@@ -65,7 +67,6 @@ inference_transform = transforms.Compose([
 def run_cnn_detection(image_path):
     print(f"\n[Stage 3] CNN Tamper Detection")
     print(f"  Input : {image_path}")
-
 
     image = cv2.imread(image_path)
     if image is None:
