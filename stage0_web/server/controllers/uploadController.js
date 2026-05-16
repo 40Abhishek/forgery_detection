@@ -4,7 +4,7 @@ const { spawn } = require("child_process");
 
 const RESULT_PATH = "/tmp/result.json";
 
-const MAIN_PY_PATH = path.join(__dirname, "../../../../main.py");
+const MAIN_PY_PATH = path.join(__dirname, "../../../main.py");
 
 exports.uploadFile = (req, res) => {
   try {
