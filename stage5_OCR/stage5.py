@@ -14,17 +14,19 @@ import easyocr
 from spellchecker import SpellChecker
 from pypdf import PdfReader
 
-path = "local datastore/main.pdf"
+path = "/tmp/main.pdf"
 
-print("[Stage 5] Loading EasyOCR model")
-reader = easyocr.Reader(["en", "hi"], gpu=False)
-spell  = SpellChecker()
+# ✅ spell checker stays at module level (lightweight, no download)
+spell = SpellChecker()
 
 
 # ── Text Extraction ───────────────────────────────────────
 
 def extract_text_from_image(image_path):
     """Uses EasyOCR to extract text from image files (JPG, PNG)."""
+    # ✅ Moved inside function — lazy init, no progress bars
+    reader = easyocr.Reader(["en", "hi"], gpu=False, verbose=False)
+    
     raw        = reader.readtext(image_path)
     detections = [{"text": text.strip(), "confidence": round(conf, 3)}
                   for (_, text, conf) in raw if conf >= 0.5]
@@ -40,10 +42,7 @@ def extract_text_from_image(image_path):
 
 
 def extract_text_from_pdf(pdf_path):
-    """
-    Uses pypdf to extract embedded text from vector PDFs.
-    Much more accurate than OCR for PDFs since text is already stored as characters.
-    """
+    """Uses pypdf to extract embedded text from vector PDFs."""
     reader_pdf = PdfReader(pdf_path)
     all_text   = ""
     for page in reader_pdf.pages:
@@ -55,7 +54,7 @@ def extract_text_from_pdf(pdf_path):
     word_list = full_text.split()
     return {
         "full_text" : full_text,
-        "detections": [],          # no per-word confidence for PDF text
+        "detections": [],
         "word_list" : word_list,
         "word_count": len(word_list),
         "source"    : "pypdf"
@@ -172,17 +171,9 @@ def compute_ocr_score(spelling, dates, numeric):
 # ── Main Entry Point ──────────────────────────────────────
 
 def run_ocr_extraction(file_path):
-    """
-    Works for both image files and PDFs.
-    Detects file type by extension and uses the correct extractor.
-    All checks (spelling, dates, numeric) are identical for both.
-    """
-
     print(f"\n[Stage 5] OCR Extraction + Validation")
     print(f"  Input : {file_path}")
-    
 
-    # Choose extractor based on file type
     ext = os.path.splitext(file_path)[1].lower()
     if ext == ".pdf":
         ocr = extract_text_from_pdf(file_path)
@@ -204,7 +195,6 @@ def run_ocr_extraction(file_path):
     for name, result in [("SPELLING", spelling), ("DATES", dates), ("NUMERIC", numeric)]:
         flag = "SUSPICIOUS" if result["suspicious"] else "OK"
         print(f"  [{flag}]  {name:10} {result['detail']}")
-
 
     print(f"  OCR Score  : {ocr_score} / 100")
     print(f"  Verdict    : {'SUSPICIOUS' if overall_suspicious else 'LIKELY GENUINE'}")

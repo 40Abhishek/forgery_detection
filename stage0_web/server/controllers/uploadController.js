@@ -17,7 +17,6 @@ exports.uploadFile = (req, res) => {
     const fileName = req.file.filename;
     console.log("Sending to Python:", filePath);
 
-    // ✅ DEBUG: Check if python script exists
     if (!fs.existsSync(MAIN_PY_PATH)) {
       console.log("❌ ERROR: main.py not found at:", MAIN_PY_PATH);
       return res.status(500).json({
@@ -32,7 +31,6 @@ exports.uploadFile = (req, res) => {
       fs.unlinkSync(RESULT_PATH);
     }
 
-    // ✅ UNBUFFER PYTHON OUTPUT + increase maxBuffer
     const python = spawn("python3", [
       MAIN_PY_PATH,
       filePath,
@@ -63,21 +61,18 @@ exports.uploadFile = (req, res) => {
       console.log("PY ERROR:", data.toString());
     });
 
-    // ✅ Add timeout: Kill Python if it runs > 2 minutes
     const pythonTimeout = setTimeout(() => {
       console.log("⚠️  Python timeout (2 minutes) - killing process");
       python.kill("SIGTERM");
-    }, 120000); // 2 minutes
-
+    }, 120000); 
     python.on("close", (code) => {
       clearTimeout(pythonTimeout);
-      console.log("✅ Python finished with code:", code);
+      console.log("Python finished with code:", code);
       
       if (!pythonStarted) {
-        console.log("⚠️  WARNING: Python didn't output anything!");
+        console.log("WARNING: Python didn't output anything!");
       }
 
-      // ✅ DELETE UPLOADED FILE
       try {
         if (fs.existsSync(filePath)) {
           fs.unlinkSync(filePath);
@@ -97,13 +92,12 @@ exports.uploadFile = (req, res) => {
         });
       }
 
-      // ✅ WAIT UP TO 10 SECONDS FOR RESULT
       let attempts = 0;
-      const maxAttempts = 100; // 100 attempts × 100ms = 10 seconds
+      const maxAttempts = 100; 
       const checkInterval = setInterval(() => {
         attempts++;
         
-        if (attempts % 10 === 0) {  // Log every 10 attempts (every 1 second)
+        if (attempts % 10 === 0) {
           console.log(`Checking for result.json (attempt ${attempts}/${maxAttempts})...`);
         }
 
@@ -118,9 +112,9 @@ exports.uploadFile = (req, res) => {
 
             try {
               fs.unlinkSync(RESULT_PATH);
-              console.log("🗑️  Deleted result.json");
+              console.log("  Deleted result.json");
             } catch (err) {
-              console.log(`⚠️  Failed to delete result.json: ${err.message}`);
+              console.log(`  Failed to delete result.json: ${err.message}`);
             }
 
             cleanupOldUploads();
@@ -132,12 +126,11 @@ exports.uploadFile = (req, res) => {
               result: result
             });
           } catch (err) {
-            console.log("❌ JSON PARSE ERROR:", err.message);
+            console.log(" JSON PARSE ERROR:", err.message);
             
             try {
               fs.unlinkSync(RESULT_PATH);
             } catch (e) {
-              // ignore
             }
             
             return res.status(500).json({
@@ -157,7 +150,6 @@ exports.uploadFile = (req, res) => {
           try {
             fs.unlinkSync(RESULT_PATH);
           } catch (e) {
-            // ignore
           }
           
           return res.status(500).json({
@@ -172,15 +164,14 @@ exports.uploadFile = (req, res) => {
     });
 
     python.on("error", (err) => {
-      console.log("❌ Python spawn error:", err);
+      console.log(" Python spawn error:", err);
       
       try {
         if (fs.existsSync(filePath)) {
           fs.unlinkSync(filePath);
-          console.log(`🗑️  Deleted uploaded file after error: ${fileName}`);
+          console.log(`  Deleted uploaded file after error: ${fileName}`);
         }
       } catch (e) {
-        // ignore
       }
       
       return res.status(500).json({
@@ -191,7 +182,7 @@ exports.uploadFile = (req, res) => {
     });
 
   } catch (err) {
-    console.log("❌ Controller Error:", err);
+    console.log(" Controller Error:", err);
     return res.status(500).json({
       success: false,
       message: err.message
@@ -217,6 +208,6 @@ function cleanupOldUploads() {
       }
     });
   } catch (err) {
-    console.log(`⚠️  Cleanup error: ${err.message}`);
+    console.log(`  Cleanup error: ${err.message}`);
   }
 }
