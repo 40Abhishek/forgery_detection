@@ -17,32 +17,67 @@ exports.uploadFile = (req, res) => {
     const fileName = req.file.filename;
     console.log("Sending to Python:", filePath);
 
+    // ✅ DEBUG: Check if python script exists
+    if (!fs.existsSync(MAIN_PY_PATH)) {
+      console.log("❌ ERROR: main.py not found at:", MAIN_PY_PATH);
+      return res.status(500).json({
+        success: false,
+        message: "Python script not found",
+        path: MAIN_PY_PATH
+      });
+    }
+    console.log("✅ main.py found at:", MAIN_PY_PATH);
+
     if (fs.existsSync(RESULT_PATH)) {
       fs.unlinkSync(RESULT_PATH);
     }
 
+    // ✅ UNBUFFER PYTHON OUTPUT + increase maxBuffer
     const python = spawn("python3", [
       MAIN_PY_PATH,
       filePath,
       RESULT_PATH
-    ]);
+    ], {
+      maxBuffer: 10 * 1024 * 1024,  // 10MB buffer
+      env: {
+        ...process.env,
+        PYTHONUNBUFFERED: "1"  // ✅ Force Python to flush output immediately
+      }
+    });
+
+    console.log("✅ Python process spawned, PID:", python.pid);
 
     let pythonOutput = "";
     let pythonError = "";
+    let pythonStarted = false;
 
     python.stdout.on("data", (data) => {
+      pythonStarted = true;
       pythonOutput += data.toString();
       console.log("PY OUTPUT:", data.toString());
     });
 
     python.stderr.on("data", (data) => {
+      pythonStarted = true;
       pythonError += data.toString();
       console.log("PY ERROR:", data.toString());
     });
 
-    python.on("close", (code) => {
-      console.log("✅ Python finished with code:", code);
+    // ✅ Add timeout: Kill Python if it runs > 2 minutes
+    const pythonTimeout = setTimeout(() => {
+      console.log("⚠️  Python timeout (2 minutes) - killing process");
+      python.kill("SIGTERM");
+    }, 120000); // 2 minutes
 
+    python.on("close", (code) => {
+      clearTimeout(pythonTimeout);
+      console.log("✅ Python finished with code:", code);
+      
+      if (!pythonStarted) {
+        console.log("⚠️  WARNING: Python didn't output anything!");
+      }
+
+      // ✅ DELETE UPLOADED FILE
       try {
         if (fs.existsSync(filePath)) {
           fs.unlinkSync(filePath);
@@ -57,15 +92,20 @@ exports.uploadFile = (req, res) => {
         return res.status(500).json({
           success: false,
           message: "Python processing failed",
-          error: pythonError
+          error: pythonError || "No error output",
+          pythonOutput: pythonOutput
         });
       }
 
+      // ✅ WAIT UP TO 10 SECONDS FOR RESULT
       let attempts = 0;
-      const maxAttempts = 50; // 50 attempts × 100ms = 5 seconds
+      const maxAttempts = 100; // 100 attempts × 100ms = 10 seconds
       const checkInterval = setInterval(() => {
         attempts++;
-        console.log(`Checking for result.json (attempt ${attempts}/${maxAttempts})...`);
+        
+        if (attempts % 10 === 0) {  // Log every 10 attempts (every 1 second)
+          console.log(`Checking for result.json (attempt ${attempts}/${maxAttempts})...`);
+        }
 
         if (fs.existsSync(RESULT_PATH)) {
           clearInterval(checkInterval);
@@ -92,7 +132,7 @@ exports.uploadFile = (req, res) => {
               result: result
             });
           } catch (err) {
-            console.log("JSON PARSE ERROR:", err.message);
+            console.log("❌ JSON PARSE ERROR:", err.message);
             
             try {
               fs.unlinkSync(RESULT_PATH);
@@ -110,7 +150,9 @@ exports.uploadFile = (req, res) => {
 
         if (attempts >= maxAttempts) {
           clearInterval(checkInterval);
-          console.log(" result.json NOT FOUND after 5 seconds");
+          console.log("❌ result.json NOT FOUND after 10 seconds");
+          console.log("Python Output:", pythonOutput);
+          console.log("Python Error:", pythonError);
           
           try {
             fs.unlinkSync(RESULT_PATH);
@@ -120,12 +162,12 @@ exports.uploadFile = (req, res) => {
           
           return res.status(500).json({
             success: false,
-            message: "Processing timeout — result file not created",
-            pythonOutput: pythonOutput.substring(0, 500),
-            pythonError: pythonError.substring(0, 500)
+            message: "Processing timeout — result file not created after 10 seconds",
+            pythonOutput: pythonOutput,
+            pythonError: pythonError
           });
         }
-      }, 100); 
+      }, 100);
 
     });
 
