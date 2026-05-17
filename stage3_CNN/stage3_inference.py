@@ -5,15 +5,13 @@ import cv2
 from torchvision import transforms
 import os
 
-# ✅ model.pth is at repo root — 2 levels up from stage3_CNN/
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "../../model.pth")
 IMAGE_SIZE = 128
 DEVICE     = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-path = "/tmp/main.png"
+# Global model variable
+_model = None
 
-
-# ── Model — must match build_model() in training exactly ──
+# ── Model architecture ───────────────────────────────────────
 def conv_block(in_ch, out_ch):
     return nn.Sequential(
         nn.Conv2d(in_ch, out_ch, kernel_size=3, padding=1),
@@ -40,21 +38,24 @@ def build_model():
     ).to(DEVICE)
 
 
-# ── Load model once ───────────────────────────────────────
-print("[Stage 3] Loading CNN model...")
+# ✅ LAZY LOAD: Only load model when needed
+def get_model():
+    global _model
+    if _model is None:
+        print("[Stage 3] Loading CNN model...")
+        MODEL_PATH = os.path.join(os.path.dirname(__file__), "../../model.pth")
+        try:
+            _model = build_model()
+            _model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
+            _model.eval()
+            print(f"[Stage 3] Model loaded from {MODEL_PATH}")
+        except FileNotFoundError:
+            print("CURRENT DIR:::::", os.getcwd())
+            raise FileNotFoundError(f"Model not found: {MODEL_PATH} — run stage3_train.py first")
+    return _model
 
-# ✅ Removed os.chdir("../../") — was breaking all other file paths globally
-try:
-    model = build_model()
-    model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
-    model.eval()
-    print(f"[Stage 3] Model loaded from {MODEL_PATH}")
-except FileNotFoundError:
-    print("CURRENT DIR:::::", os.getcwd())
-    raise FileNotFoundError(f"Model not found: {MODEL_PATH} — run stage3_train.py first")
 
-
-# ── Inference transform — same as val transform in training ─
+# ── Inference transform ──────────────────────────────────────
 inference_transform = transforms.Compose([
     transforms.ToPILImage(),
     transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
@@ -63,10 +64,13 @@ inference_transform = transforms.Compose([
 ])
 
 
-# ── Inference ─────────────────────────────────────────────
+# ── Inference ────────────────────────────────────────────────
 def run_cnn_detection(image_path):
     print(f"\n[Stage 3] CNN Tamper Detection")
     print(f"  Input : {image_path}")
+
+    # ✅ Load model only when detection is actually needed
+    model = get_model()
 
     image = cv2.imread(image_path)
     if image is None:
@@ -93,5 +97,5 @@ def run_cnn_detection(image_path):
 
 
 if __name__ == "__main__":
-    result = run_cnn_detection(path)
+    result = run_cnn_detection("/tmp/main.png")
     print(f"\n  → CNN score for Risk Engine : {result['cnn_score']}")
